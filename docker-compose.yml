@@ -1,0 +1,12 @@
+services:
+  zanime:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - zanime_data:/data
+    environment:
+      - ConnectionStrings__Sqlite=Data Source=/data/zanime.db
+
+volumes:
+  zanime_data:
