@@ -12,9 +12,9 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
 {
     private const string AnilistApiUrl = "https://graphql.anilist.co";
 
-    public async Task<AnilistImportResultDto> ImportByUsernameAsync(string username, int userId)
+    public async Task<AnilistImportResultDto> ImportByUsernameAsync(string username, int userId, Func<ImportProgressDto, Task>? onProgress = null)
     {
-        int imported = 0, skipped = 0;
+        int imported = 0, skipped = 0, processed = 0;
         var errors = new List<string>();
         var page = 1;
         bool hasNextPage;
@@ -89,17 +89,19 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                 {
                     var media = item.GetProperty("media");
                     var anilistId = media.GetProperty("id").GetInt32();
+                    var titleRomaji = media.GetProperty("title").GetProperty("romaji").GetString() ?? string.Empty;
+                    var titleEnglish = media.GetProperty("title").GetProperty("english").ValueKind == JsonValueKind.Null
+                        ? null
+                        : media.GetProperty("title").GetProperty("english").GetString();
+
+                    if (onProgress != null)
+                        await onProgress(new ImportProgressDto(++processed, null, titleRomaji));
 
                     if (existingAnilistIds.Contains(anilistId))
                     {
                         skipped++;
                         continue;
                     }
-
-                    var titleRomaji = media.GetProperty("title").GetProperty("romaji").GetString() ?? string.Empty;
-                    var titleEnglish = media.GetProperty("title").GetProperty("english").ValueKind == JsonValueKind.Null
-                        ? null
-                        : media.GetProperty("title").GetProperty("english").GetString();
 
                     var episodes = media.GetProperty("episodes").ValueKind == JsonValueKind.Null
                         ? (int?)null
@@ -203,9 +205,9 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         return new AnilistImportResultDto(imported, skipped, errors);
     }
 
-    public async Task<AnilistImportResultDto> ImportFromJsonAsync(Stream jsonStream, int userId)
+    public async Task<AnilistImportResultDto> ImportFromJsonAsync(Stream jsonStream, int userId, Func<ImportProgressDto, Task>? onProgress = null)
     {
-        int imported = 0, skipped = 0;
+        int imported = 0, skipped = 0, processed = 0;
         var errors = new List<string>();
 
         var settings = await db.Settings.FindAsync(1) ?? new AppSettings();
@@ -222,6 +224,9 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         using var doc = await JsonDocument.ParseAsync(jsonStream);
         var lists = doc.RootElement.GetProperty("lists");
 
+        var totalEntries = lists.EnumerateArray()
+            .Sum(l => l.GetProperty("entries").EnumerateArray().Count());
+
         foreach (var list in lists.EnumerateArray())
         {
             foreach (var entry in list.GetProperty("entries").EnumerateArray())
@@ -230,17 +235,19 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                 {
                     var media = entry.GetProperty("media");
                     var anilistId = media.GetProperty("id").GetInt32();
+                    var titleRomaji = media.GetProperty("title").GetProperty("romaji").GetString() ?? string.Empty;
+                    var titleEnglish = media.GetProperty("title").TryGetProperty("english", out var eng) && eng.ValueKind != JsonValueKind.Null
+                        ? eng.GetString()
+                        : null;
+
+                    if (onProgress != null)
+                        await onProgress(new ImportProgressDto(++processed, totalEntries, titleRomaji));
 
                     if (existingAnilistIds.Contains(anilistId))
                     {
                         skipped++;
                         continue;
                     }
-
-                    var titleRomaji = media.GetProperty("title").GetProperty("romaji").GetString() ?? string.Empty;
-                    var titleEnglish = media.GetProperty("title").TryGetProperty("english", out var eng) && eng.ValueKind != JsonValueKind.Null
-                        ? eng.GetString()
-                        : null;
 
                     var statusStr = entry.GetProperty("status").GetString() ?? string.Empty;
                     var score = entry.GetProperty("score").GetDouble();

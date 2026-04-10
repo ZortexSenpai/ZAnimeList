@@ -61,10 +61,61 @@ export interface ImportResult {
   errors: string[];
 }
 
-export const importMal = (file: File) => {
+export interface ImportProgress {
+  processed: number;
+  total: number | null;
+  current: string | null;
+}
+
+async function streamImport(
+  url: string,
+  init: RequestInit,
+  onProgress: (p: ImportProgress) => void,
+): Promise<ImportResult> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      ...(init.headers as Record<string, string> | undefined),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let result: ImportResult | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop()!;
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const data = JSON.parse(line);
+      if ('errors' in data) {
+        result = data as ImportResult;
+      } else {
+        onProgress(data as ImportProgress);
+      }
+    }
+  }
+
+  if (!result) throw new Error('Import ended without a result.');
+  return result;
+}
+
+export const importMal = (file: File, onProgress: (p: ImportProgress) => void) => {
   const form = new FormData();
   form.append('file', file);
-  return api.post<ImportResult>('/importexport/mal/import', form).then(r => r.data);
+  return streamImport('/api/importexport/mal/import', { method: 'POST', body: form }, onProgress);
 };
 
 export const exportMal = () =>
@@ -77,15 +128,17 @@ export const exportMal = () =>
     URL.revokeObjectURL(url);
   });
 
-export const importAnilistByUsername = (username: string) =>
-  api.post<ImportResult>('/importexport/anilist/import/username', null, {
-    params: { username },
-  }).then(r => r.data);
+export const importAnilistByUsername = (username: string, onProgress: (p: ImportProgress) => void) =>
+  streamImport(
+    `/api/importexport/anilist/import/username?username=${encodeURIComponent(username)}`,
+    { method: 'POST' },
+    onProgress,
+  );
 
-export const importAnilistFile = (file: File) => {
+export const importAnilistFile = (file: File, onProgress: (p: ImportProgress) => void) => {
   const form = new FormData();
   form.append('file', file);
-  return api.post<ImportResult>('/importexport/anilist/import/file', form).then(r => r.data);
+  return streamImport('/api/importexport/anilist/import/file', { method: 'POST', body: form }, onProgress);
 };
 
 // AniList search

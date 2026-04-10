@@ -13,12 +13,12 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
 {
     private const string AnilistApiUrl = "https://graphql.anilist.co";
 
-    public async Task<MalImportResultDto> ImportAsync(Stream xmlStream, int userId)
+    public async Task<MalImportResultDto> ImportAsync(Stream xmlStream, int userId, Func<ImportProgressDto, Task>? onProgress = null)
     {
         var doc = XDocument.Load(xmlStream);
         var entries = doc.Descendants("anime").ToList();
 
-        int imported = 0, skipped = 0;
+        int imported = 0, skipped = 0, processed = 0;
         var errors = new List<string>();
 
         var settings = await db.Settings.FindAsync(1) ?? new AppSettings();
@@ -48,6 +48,9 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
             {
                 var malId = int.Parse(entry.Element("series_animedb_id")?.Value ?? "0");
                 var title = entry.Element("series_title")?.Value ?? string.Empty;
+                processed++;
+                if (onProgress != null)
+                    await onProgress(new ImportProgressDto(processed, entries.Count, title));
                 var statusStr = entry.Element("my_status")?.Value ?? string.Empty;
                 var score = int.TryParse(entry.Element("my_score")?.Value, out var s) ? (int?)s : null;
                 var episodesWatched = int.TryParse(entry.Element("my_watched_episodes")?.Value, out var ep) ? ep : 0;

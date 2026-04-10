@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { importMal, importAnilistByUsername, importAnilistFile, exportMal, type ImportResult } from '../services/api';
+import { importMal, importAnilistByUsername, importAnilistFile, exportMal, type ImportResult, type ImportProgress } from '../services/api';
 
 interface Props {
   onClose: () => void;
@@ -15,6 +15,7 @@ export function ImportModal({ onClose, onImported }: Props) {
   const [username, setUsername] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,26 +23,29 @@ export function ImportModal({ onClose, onImported }: Props) {
     setLoading(true);
     setError(null);
     setResult(null);
+    setProgress(null);
     try {
       let res: ImportResult;
+      const onProgress = (p: ImportProgress) => setProgress(p);
       if (provider === 'mal') {
         if (!file) { setError('Please select your MAL XML export file.'); return; }
-        res = await importMal(file);
+        res = await importMal(file, onProgress);
       } else {
         if (anilistMethod === 'username') {
           if (!username.trim()) { setError('Please enter your AniList username.'); return; }
-          res = await importAnilistByUsername(username.trim());
+          res = await importAnilistByUsername(username.trim(), onProgress);
         } else {
           if (!file) { setError('Please select your AniList JSON export file.'); return; }
-          res = await importAnilistFile(file);
+          res = await importAnilistFile(file, onProgress);
         }
       }
       setResult(res);
       onImported();
     } catch (e: any) {
-      setError(e.response?.data?.message ?? 'Import failed. Please try again.');
+      setError(e.message ?? 'Import failed. Please try again.');
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -112,6 +116,31 @@ export function ImportModal({ onClose, onImported }: Props) {
             </div>
           )}
 
+          {loading && (
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>Importing…</span>
+                {progress && (
+                  <span>
+                    {progress.processed}
+                    {progress.total != null ? ` / ${progress.total}` : ''}
+                  </span>
+                )}
+              </div>
+              {progress?.total != null && (
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                  <div
+                    className="bg-indigo-600 h-1.5 rounded-full transition-all duration-150"
+                    style={{ width: `${Math.min(100, (progress.processed / progress.total) * 100)}%` }}
+                  />
+                </div>
+              )}
+              {progress?.current && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{progress.current}</p>
+              )}
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           {result && (
@@ -135,7 +164,7 @@ export function ImportModal({ onClose, onImported }: Props) {
               disabled={loading}
               className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
             >
-              {loading ? 'Importing...' : 'Import'}
+              {loading ? 'Importing…' : 'Import'}
             </button>
             {provider === 'mal' && (
               <button
