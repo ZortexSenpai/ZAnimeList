@@ -25,46 +25,48 @@ public class AnimeController(AppDbContext db) : ControllerBase
         [FromQuery] bool sortDesc = false)
     {
         var userId = GetUserId();
-        var query = db.Animes
-            .Where(a => a.UserId == userId)
-            .Include(a => a.AnimeGenres)
-            .ThenInclude(ag => ag.Genre)
+        var query = db.UserAnimes
+            .Where(ua => ua.UserId == userId)
             .AsQueryable();
 
         if (status.HasValue)
-            query = query.Where(a => a.Status == status.Value);
+            query = query.Where(ua => ua.Status == status.Value);
 
         if (genres is { Length: > 0 })
-            query = query.Where(a => genres.All(g => a.AnimeGenres.Any(ag => ag.Genre.Name == g)));
+            query = query.Where(ua => genres.All(g => ua.Anime.AnimeGenres.Any(ag => ag.Genre.Name == g)));
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(a => a.Title.Contains(search) || (a.TitleEnglish != null && a.TitleEnglish.Contains(search)));
+            query = query.Where(ua => ua.Anime.Title.Contains(search) || (ua.Anime.TitleEnglish != null && ua.Anime.TitleEnglish.Contains(search)));
 
         query = sortBy switch
         {
-            "score"       => sortDesc ? query.OrderByDescending(a => a.Score) : query.OrderBy(a => a.Score),
-            "releaseDate" => sortDesc ? query.OrderByDescending(a => a.AiredFrom) : query.OrderBy(a => a.AiredFrom),
-            _             => sortDesc ? query.OrderByDescending(a => a.Title) : query.OrderBy(a => a.Title),
+            "score"       => sortDesc ? query.OrderByDescending(ua => ua.Score) : query.OrderBy(ua => ua.Score),
+            "releaseDate" => sortDesc ? query.OrderByDescending(ua => ua.Anime.AiredFrom) : query.OrderBy(ua => ua.Anime.AiredFrom),
+            _             => sortDesc ? query.OrderByDescending(ua => ua.Anime.Title) : query.OrderBy(ua => ua.Anime.Title),
         };
 
-        var animes = await query
-            .Select(a => new
+        var entries = await query
+            .Select(ua => new
             {
-                a.Id, a.Title, a.TitleEnglish, a.Synopsis, a.CoverImageUrl,
-                a.TotalEpisodes, a.EpisodesWatched, a.Status, a.Score,
-                a.StartedAt, a.FinishedAt, a.AiredFrom, a.MalId, a.AnilistId,
-                a.CreatedAt, a.UpdatedAt,
-                HasImage = a.CoverImageData != null,
-                Genres = a.AnimeGenres.Select(ag => ag.Genre.Name).ToList()
+                ua.Id,
+                ua.Anime.Title, ua.Anime.TitleEnglish, ua.Anime.Synopsis,
+                ua.Anime.CoverImageUrl,
+                ua.Anime.TotalEpisodes,
+                ua.EpisodesWatched, ua.Status, ua.Score,
+                ua.StartedAt, ua.FinishedAt,
+                ua.Anime.AiredFrom, ua.Anime.MalId, ua.Anime.AnilistId,
+                ua.CreatedAt, ua.UpdatedAt,
+                HasImage = ua.Anime.CoverImageData != null,
+                Genres = ua.Anime.AnimeGenres.Select(ag => ag.Genre.Name).ToList()
             })
             .ToListAsync();
 
-        return Ok(animes.Select(a => new AnimeDto(
-            a.Id, a.Title, a.TitleEnglish, a.Synopsis,
-            a.HasImage ? $"/api/anime/{a.Id}/image" : a.CoverImageUrl,
-            a.TotalEpisodes, a.EpisodesWatched, a.Status, a.Score,
-            a.StartedAt, a.FinishedAt, a.AiredFrom, a.MalId, a.AnilistId,
-            a.CreatedAt, a.UpdatedAt, a.Genres
+        return Ok(entries.Select(ua => new AnimeDto(
+            ua.Id, ua.Title, ua.TitleEnglish, ua.Synopsis,
+            ua.HasImage ? $"/api/anime/{ua.Id}/image" : ua.CoverImageUrl,
+            ua.TotalEpisodes, ua.EpisodesWatched, ua.Status, ua.Score,
+            ua.StartedAt, ua.FinishedAt, ua.AiredFrom, ua.MalId, ua.AnilistId,
+            ua.CreatedAt, ua.UpdatedAt, ua.Genres
         )));
     }
 
@@ -72,29 +74,31 @@ public class AnimeController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<AnimeDto>> GetById(int id)
     {
         var userId = GetUserId();
-        var anime = await db.Animes
-            .Where(a => a.Id == id && a.UserId == userId)
-            .Include(a => a.AnimeGenres)
-            .ThenInclude(ag => ag.Genre)
-            .Select(a => new
+        var ua = await db.UserAnimes
+            .Where(ua => ua.Id == id && ua.UserId == userId)
+            .Select(ua => new
             {
-                a.Id, a.Title, a.TitleEnglish, a.Synopsis, a.CoverImageUrl,
-                a.TotalEpisodes, a.EpisodesWatched, a.Status, a.Score,
-                a.StartedAt, a.FinishedAt, a.AiredFrom, a.MalId, a.AnilistId,
-                a.CreatedAt, a.UpdatedAt,
-                HasImage = a.CoverImageData != null,
-                Genres = a.AnimeGenres.Select(ag => ag.Genre.Name).ToList()
+                ua.Id,
+                ua.Anime.Title, ua.Anime.TitleEnglish, ua.Anime.Synopsis,
+                ua.Anime.CoverImageUrl,
+                ua.Anime.TotalEpisodes,
+                ua.EpisodesWatched, ua.Status, ua.Score,
+                ua.StartedAt, ua.FinishedAt,
+                ua.Anime.AiredFrom, ua.Anime.MalId, ua.Anime.AnilistId,
+                ua.CreatedAt, ua.UpdatedAt,
+                HasImage = ua.Anime.CoverImageData != null,
+                Genres = ua.Anime.AnimeGenres.Select(ag => ag.Genre.Name).ToList()
             })
             .FirstOrDefaultAsync();
 
-        if (anime is null) return NotFound();
+        if (ua is null) return NotFound();
 
         return Ok(new AnimeDto(
-            anime.Id, anime.Title, anime.TitleEnglish, anime.Synopsis,
-            anime.HasImage ? $"/api/anime/{anime.Id}/image" : anime.CoverImageUrl,
-            anime.TotalEpisodes, anime.EpisodesWatched, anime.Status, anime.Score,
-            anime.StartedAt, anime.FinishedAt, anime.AiredFrom, anime.MalId, anime.AnilistId,
-            anime.CreatedAt, anime.UpdatedAt, anime.Genres
+            ua.Id, ua.Title, ua.TitleEnglish, ua.Synopsis,
+            ua.HasImage ? $"/api/anime/{ua.Id}/image" : ua.CoverImageUrl,
+            ua.TotalEpisodes, ua.EpisodesWatched, ua.Status, ua.Score,
+            ua.StartedAt, ua.FinishedAt, ua.AiredFrom, ua.MalId, ua.AnilistId,
+            ua.CreatedAt, ua.UpdatedAt, ua.Genres
         ));
     }
 
@@ -102,13 +106,13 @@ public class AnimeController(AppDbContext db) : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetImage(int id)
     {
-        var anime = await db.Animes
-            .Where(a => a.Id == id)
-            .Select(a => new { a.CoverImageData, a.CoverImageMimeType })
+        var entry = await db.UserAnimes
+            .Where(ua => ua.Id == id)
+            .Select(ua => new { ua.Anime.CoverImageData, ua.Anime.CoverImageMimeType })
             .FirstOrDefaultAsync();
 
-        if (anime?.CoverImageData is null) return NotFound();
-        return File(anime.CoverImageData, anime.CoverImageMimeType ?? "image/jpeg");
+        if (entry?.CoverImageData is null) return NotFound();
+        return File(entry.CoverImageData, entry.CoverImageMimeType ?? "image/jpeg");
     }
 
     [HttpPost]
@@ -116,63 +120,91 @@ public class AnimeController(AppDbContext db) : ControllerBase
     {
         var userId = GetUserId();
 
-        if (dto.AnilistId.HasValue && await db.Animes.AnyAsync(a => a.AnilistId == dto.AnilistId && a.UserId == userId))
-            return Conflict(new { message = $"An anime with AniList ID {dto.AnilistId} is already in your list." });
+        // Try to find an existing shared Anime by external ID
+        Anime? anime = null;
 
-        if (dto.MalId.HasValue && await db.Animes.AnyAsync(a => a.MalId == dto.MalId && a.UserId == userId))
-            return Conflict(new { message = $"An anime with MyAnimeList ID {dto.MalId} is already in your list." });
+        if (dto.AnilistId.HasValue)
+            anime = await db.Animes.FirstOrDefaultAsync(a => a.AnilistId == dto.AnilistId);
 
-        if (await db.Animes.AnyAsync(a => a.Title == dto.Title && a.UserId == userId))
-            return Conflict(new { message = $"\"{dto.Title}\" is already in your list." });
+        if (anime == null && dto.MalId.HasValue)
+            anime = await db.Animes.FirstOrDefaultAsync(a => a.MalId == dto.MalId);
 
-        var anime = new Anime
+        if (anime != null)
         {
-            Title = dto.Title,
-            TitleEnglish = dto.TitleEnglish,
-            Synopsis = dto.Synopsis,
-            CoverImageUrl = dto.CoverImageUrl,
-            TotalEpisodes = dto.TotalEpisodes,
-            EpisodesWatched = dto.EpisodesWatched,
+            // Anime already exists in the DB — check if this user already has it
+            if (await db.UserAnimes.AnyAsync(ua => ua.AnimeId == anime.Id && ua.UserId == userId))
+                return Conflict(new { message = $"\"{anime.Title}\" is already in your list." });
+        }
+        else
+        {
+            // No external ID match — check for title duplicate in the user's list
+            if (!dto.AnilistId.HasValue && !dto.MalId.HasValue &&
+                await db.UserAnimes.AnyAsync(ua => ua.UserId == userId && ua.Anime.Title == dto.Title))
+                return Conflict(new { message = $"\"{dto.Title}\" is already in your list." });
+
+            anime = new Anime
+            {
+                Title = dto.Title,
+                TitleEnglish = dto.TitleEnglish,
+                Synopsis = dto.Synopsis,
+                CoverImageUrl = dto.CoverImageUrl,
+                TotalEpisodes = dto.TotalEpisodes,
+                AiredFrom = dto.AiredFrom,
+                MalId = dto.MalId,
+                AnilistId = dto.AnilistId,
+            };
+            await AttachGenres(anime, dto.Genres);
+            db.Animes.Add(anime);
+            await db.SaveChangesAsync();
+        }
+
+        var userAnime = new UserAnime
+        {
+            UserId = userId,
+            AnimeId = anime.Id,
             Status = dto.Status,
             Score = dto.Score,
+            EpisodesWatched = dto.EpisodesWatched,
             StartedAt = dto.StartedAt,
             FinishedAt = dto.FinishedAt,
-            AiredFrom = dto.AiredFrom,
-            MalId = dto.MalId,
-            AnilistId = dto.AnilistId,
-            UserId = userId,
         };
 
-        await AttachGenres(anime, dto.Genres);
-        db.Animes.Add(anime);
+        db.UserAnimes.Add(userAnime);
         await db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = anime.Id }, await GetById(anime.Id));
+        return CreatedAtAction(nameof(GetById), new { id = userAnime.Id }, await GetById(userAnime.Id));
     }
 
     [HttpPut("{id:int}")]
     public async Task<ActionResult<AnimeDto>> Update(int id, UpdateAnimeDto dto)
     {
         var userId = GetUserId();
-        var anime = await db.Animes
-            .Where(a => a.Id == id && a.UserId == userId)
-            .Include(a => a.AnimeGenres)
+        var userAnime = await db.UserAnimes
+            .Where(ua => ua.Id == id && ua.UserId == userId)
+            .Include(ua => ua.Anime)
+            .ThenInclude(a => a.AnimeGenres)
             .ThenInclude(ag => ag.Genre)
             .FirstOrDefaultAsync();
 
-        if (anime is null) return NotFound();
+        if (userAnime is null) return NotFound();
 
+        // Update tracking fields on UserAnime
+        if (dto.Status.HasValue) userAnime.Status = dto.Status.Value;
+        if (dto.Score.HasValue) userAnime.Score = dto.Score;
+        if (dto.EpisodesWatched.HasValue) userAnime.EpisodesWatched = dto.EpisodesWatched.Value;
+        if (dto.StartedAt.HasValue) userAnime.StartedAt = dto.StartedAt;
+        if (dto.FinishedAt.HasValue) userAnime.FinishedAt = dto.FinishedAt;
+        userAnime.UpdatedAt = DateTime.UtcNow;
+
+        // Update metadata fields on the shared Anime
+        var anime = userAnime.Anime;
         if (dto.Title is not null) anime.Title = dto.Title;
         if (dto.TitleEnglish is not null) anime.TitleEnglish = dto.TitleEnglish;
         if (dto.Synopsis is not null) anime.Synopsis = dto.Synopsis;
         if (dto.CoverImageUrl is not null) anime.CoverImageUrl = dto.CoverImageUrl;
         if (dto.TotalEpisodes.HasValue) anime.TotalEpisodes = dto.TotalEpisodes;
-        if (dto.EpisodesWatched.HasValue) anime.EpisodesWatched = dto.EpisodesWatched.Value;
-        if (dto.Status.HasValue) anime.Status = dto.Status.Value;
-        if (dto.Score.HasValue) anime.Score = dto.Score;
-        if (dto.StartedAt.HasValue) anime.StartedAt = dto.StartedAt;
-        if (dto.FinishedAt.HasValue) anime.FinishedAt = dto.FinishedAt;
         if (dto.AiredFrom.HasValue) anime.AiredFrom = dto.AiredFrom;
+        anime.UpdatedAt = DateTime.UtcNow;
 
         if (dto.Genres is not null)
         {
@@ -180,7 +212,6 @@ public class AnimeController(AppDbContext db) : ControllerBase
             await AttachGenres(anime, dto.Genres);
         }
 
-        anime.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return await GetById(id);
     }
@@ -189,10 +220,10 @@ public class AnimeController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> Delete(int id)
     {
         var userId = GetUserId();
-        var anime = await db.Animes.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
-        if (anime is null) return NotFound();
+        var userAnime = await db.UserAnimes.FirstOrDefaultAsync(ua => ua.Id == id && ua.UserId == userId);
+        if (userAnime is null) return NotFound();
 
-        db.Animes.Remove(anime);
+        db.UserAnimes.Remove(userAnime);
         await db.SaveChangesAsync();
         return NoContent();
     }
@@ -202,7 +233,7 @@ public class AnimeController(AppDbContext db) : ControllerBase
     {
         var userId = GetUserId();
         var genres = await db.Genres
-            .Where(g => g.AnimeGenres.Any(ag => ag.Anime.UserId == userId))
+            .Where(g => g.AnimeGenres.Any(ag => ag.Anime.UserAnimes.Any(ua => ua.UserId == userId)))
             .OrderBy(g => g.Name)
             .Select(g => g.Name)
             .ToListAsync();

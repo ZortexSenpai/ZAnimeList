@@ -36,8 +36,11 @@ public class ImportExportController(
     public async Task<IActionResult> ExportMal()
     {
         var userId = GetUserId();
-        var animes = await db.Animes.Where(a => a.UserId == userId).ToListAsync();
-        var doc = malService.ExportAsync(animes);
+        var entries = await db.UserAnimes
+            .Where(ua => ua.UserId == userId)
+            .Include(ua => ua.Anime)
+            .ToListAsync();
+        var doc = malService.ExportAsync(entries);
 
         var bytes = Encoding.UTF8.GetBytes(doc.Declaration + Environment.NewLine + doc.ToString());
         return File(bytes, "application/xml", "animelist.xml");

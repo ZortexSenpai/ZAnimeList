@@ -25,6 +25,12 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         var genreCache = await db.Genres
             .ToDictionaryAsync(g => g.Name, StringComparer.OrdinalIgnoreCase);
 
+        // Pre-load user's existing AniList entries to skip duplicates without per-entry queries.
+        var existingAnilistIds = await db.UserAnimes
+            .Where(ua => ua.UserId == userId && ua.Anime.AnilistId != null)
+            .Select(ua => ua.Anime.AnilistId!.Value)
+            .ToHashSetAsync();
+
         do
         {
             var query = """
@@ -84,7 +90,7 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var media = item.GetProperty("media");
                     var anilistId = media.GetProperty("id").GetInt32();
 
-                    if (await db.Animes.AnyAsync(a => a.AnilistId == anilistId && a.UserId == userId))
+                    if (existingAnilistIds.Contains(anilistId))
                     {
                         skipped++;
                         continue;
@@ -134,36 +140,49 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var airedFrom = ParseAnilistDate(media.GetProperty("startDate"));
                     var (imageData, imageMime, resolvedUrl) = await ResolveImageAsync(imageSource, anilistImageUrl, idMal);
 
-                    var anime = new Anime
+                    // Reuse existing shared Anime or create a new one.
+                    var anime = await db.Animes.FirstOrDefaultAsync(a => a.AnilistId == anilistId);
+                    if (anime == null)
                     {
-                        Title = titleRomaji,
-                        TitleEnglish = titleEnglish,
-                        Synopsis = description,
-                        CoverImageUrl = resolvedUrl,
-                        CoverImageData = imageData,
-                        CoverImageMimeType = imageMime,
-                        AiredFrom = airedFrom,
-                        AnilistId = anilistId,
-                        MalId = idMal,
+                        anime = new Anime
+                        {
+                            Title = titleRomaji,
+                            TitleEnglish = titleEnglish,
+                            Synopsis = description,
+                            CoverImageUrl = resolvedUrl,
+                            CoverImageData = imageData,
+                            CoverImageMimeType = imageMime,
+                            AiredFrom = airedFrom,
+                            AnilistId = anilistId,
+                            MalId = idMal,
+                            TotalEpisodes = episodes,
+                        };
+
+                        foreach (var genreName in genreNames)
+                        {
+                            if (!genreCache.TryGetValue(genreName, out var genre))
+                            {
+                                genre = new Genre { Name = genreName };
+                                db.Genres.Add(genre);
+                                genreCache[genreName] = genre;
+                            }
+                            anime.AnimeGenres.Add(new AnimeGenre { Genre = genre });
+                        }
+
+                        db.Animes.Add(anime);
+                        await db.SaveChangesAsync();
+                    }
+
+                    db.UserAnimes.Add(new UserAnime
+                    {
+                        UserId = userId,
+                        AnimeId = anime.Id,
                         Status = status,
                         Score = score > 0 ? (int)score : null,
                         EpisodesWatched = progress,
-                        TotalEpisodes = episodes,
-                        UserId = userId,
-                    };
+                    });
 
-                    foreach (var genreName in genreNames)
-                    {
-                        if (!genreCache.TryGetValue(genreName, out var genre))
-                        {
-                            genre = new Genre { Name = genreName };
-                            db.Genres.Add(genre);
-                            genreCache[genreName] = genre;
-                        }
-                        anime.AnimeGenres.Add(new AnimeGenre { Genre = genre });
-                    }
-
-                    db.Animes.Add(anime);
+                    existingAnilistIds.Add(anilistId);
                     imported++;
                 }
                 catch (Exception ex)
@@ -191,6 +210,11 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         var genreCache = await db.Genres
             .ToDictionaryAsync(g => g.Name, StringComparer.OrdinalIgnoreCase);
 
+        var existingAnilistIds = await db.UserAnimes
+            .Where(ua => ua.UserId == userId && ua.Anime.AnilistId != null)
+            .Select(ua => ua.Anime.AnilistId!.Value)
+            .ToHashSetAsync();
+
         using var doc = await JsonDocument.ParseAsync(jsonStream);
         var lists = doc.RootElement.GetProperty("lists");
 
@@ -203,7 +227,7 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var media = entry.GetProperty("media");
                     var anilistId = media.GetProperty("id").GetInt32();
 
-                    if (await db.Animes.AnyAsync(a => a.AnilistId == anilistId && a.UserId == userId))
+                    if (existingAnilistIds.Contains(anilistId))
                     {
                         skipped++;
                         continue;
@@ -250,34 +274,47 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
 
                     var (imageData, imageMime, resolvedUrl) = await ResolveImageAsync(imageSource, anilistImageUrl, idMal);
 
-                    var anime = new Anime
+                    // Reuse existing shared Anime or create a new one.
+                    var anime = await db.Animes.FirstOrDefaultAsync(a => a.AnilistId == anilistId);
+                    if (anime == null)
                     {
-                        Title = titleRomaji,
-                        TitleEnglish = titleEnglish,
-                        AnilistId = anilistId,
-                        MalId = idMal,
+                        anime = new Anime
+                        {
+                            Title = titleRomaji,
+                            TitleEnglish = titleEnglish,
+                            AnilistId = anilistId,
+                            MalId = idMal,
+                            TotalEpisodes = totalEpisodes,
+                            CoverImageUrl = resolvedUrl,
+                            CoverImageData = imageData,
+                            CoverImageMimeType = imageMime,
+                        };
+
+                        foreach (var genreName in genreNames)
+                        {
+                            if (!genreCache.TryGetValue(genreName, out var genre))
+                            {
+                                genre = new Genre { Name = genreName };
+                                db.Genres.Add(genre);
+                                genreCache[genreName] = genre;
+                            }
+                            anime.AnimeGenres.Add(new AnimeGenre { Genre = genre });
+                        }
+
+                        db.Animes.Add(anime);
+                        await db.SaveChangesAsync();
+                    }
+
+                    db.UserAnimes.Add(new UserAnime
+                    {
+                        UserId = userId,
+                        AnimeId = anime.Id,
                         Status = status,
                         Score = score > 0 ? (int)score : null,
                         EpisodesWatched = progress,
-                        TotalEpisodes = totalEpisodes,
-                        CoverImageUrl = resolvedUrl,
-                        CoverImageData = imageData,
-                        CoverImageMimeType = imageMime,
-                        UserId = userId,
-                    };
+                    });
 
-                    foreach (var genreName in genreNames)
-                    {
-                        if (!genreCache.TryGetValue(genreName, out var genre))
-                        {
-                            genre = new Genre { Name = genreName };
-                            db.Genres.Add(genre);
-                            genreCache[genreName] = genre;
-                        }
-                        anime.AnimeGenres.Add(new AnimeGenre { Genre = genre });
-                    }
-
-                    db.Animes.Add(anime);
+                    existingAnilistIds.Add(anilistId);
                     imported++;
                 }
                 catch (Exception ex)
@@ -358,10 +395,6 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         }
     }
 
-    // Resolve image based on the configured ImageSource setting.
-    // Local   → download bytes from AniList CDN and store in DB.
-    // Anilist → store AniList CDN URL (no download).
-    // MyAnimeList → fetch MAL image URL via Jikan (if idMal available), otherwise fall back to AniList URL.
     private async Task<(byte[]? data, string? mime, string? url)> ResolveImageAsync(
         ImageSource source, string? anilistUrl, int? malId)
     {
@@ -381,7 +414,7 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var malUrl = await GetJikanImageUrlAsync(malId.Value);
                     if (malUrl is not null) return (null, null, malUrl);
                 }
-                return (null, null, anilistUrl); // fallback
+                return (null, null, anilistUrl);
         }
 
         return (null, null, anilistUrl);
@@ -418,7 +451,7 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
     {
         try
         {
-            await Task.Delay(400); // Jikan rate limit: ~3 req/s
+            await Task.Delay(400);
             var response = await httpClient.GetAsync($"https://api.jikan.moe/v4/anime/{malId}");
             if (!response.IsSuccessStatusCode) return null;
             var json = await response.Content.ReadAsStringAsync();

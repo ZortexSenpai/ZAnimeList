@@ -25,12 +25,22 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
         var imageSource = settings.ImageSource;
 
         // Batch-fetch AniList metadata (id + image URL) for all MAL IDs upfront.
-        // This sets AnilistId on every imported entry and provides image URLs for the Anilist source.
         var allMalIds = entries
             .Select(e => int.TryParse(e.Element("series_animedb_id")?.Value, out var id) ? id : 0)
             .Where(id => id > 0)
             .ToList();
         var anilistInfoMap = await FetchAnilistMediaInfoAsync(allMalIds);
+
+        // Pre-load user's existing MAL entries to skip duplicates without per-entry queries.
+        var existingMalIds = await db.UserAnimes
+            .Where(ua => ua.UserId == userId && ua.Anime.MalId != null)
+            .Select(ua => ua.Anime.MalId!.Value)
+            .ToHashSetAsync();
+
+        // Pre-load all Animes already in the DB for the relevant MAL IDs.
+        var animeByMalId = await db.Animes
+            .Where(a => a.MalId != null && allMalIds.Contains(a.MalId.Value))
+            .ToDictionaryAsync(a => a.MalId!.Value);
 
         foreach (var entry in entries)
         {
@@ -49,7 +59,7 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
                     continue;
                 }
 
-                if (await db.Animes.AnyAsync(a => a.MalId == malId && a.UserId == userId))
+                if (existingMalIds.Contains(malId))
                 {
                     skipped++;
                     continue;
@@ -67,48 +77,54 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
 
                 anilistInfoMap.TryGetValue(malId, out var anilistInfo);
 
-                var anime = new Anime
+                // Reuse existing shared Anime or create a new one.
+                if (!animeByMalId.TryGetValue(malId, out var anime))
                 {
-                    Title = title,
-                    MalId = malId,
-                    AnilistId = anilistInfo?.AnilistId,
+                    anime = new Anime
+                    {
+                        Title = title,
+                        MalId = malId,
+                        AnilistId = anilistInfo?.AnilistId,
+                        TotalEpisodes = totalEpisodes == 0 ? null : totalEpisodes,
+                    };
+
+                    switch (imageSource)
+                    {
+                        case ImageSource.Local:
+                        {
+                            var imageUrl = await GetJikanImageUrlAsync(malId);
+                            if (imageUrl is not null)
+                            {
+                                var (data, mime) = await DownloadImageAsync(imageUrl);
+                                anime.CoverImageUrl = imageUrl;
+                                anime.CoverImageData = data;
+                                anime.CoverImageMimeType = mime;
+                            }
+                            break;
+                        }
+                        case ImageSource.MyAnimeList:
+                            anime.CoverImageUrl = await GetJikanImageUrlAsync(malId);
+                            break;
+                        case ImageSource.Anilist:
+                            anime.CoverImageUrl = anilistInfo?.ImageUrl;
+                            break;
+                    }
+
+                    db.Animes.Add(anime);
+                    await db.SaveChangesAsync();
+                    animeByMalId[malId] = anime;
+                }
+
+                db.UserAnimes.Add(new UserAnime
+                {
+                    UserId = userId,
+                    AnimeId = anime.Id,
                     Status = status,
                     Score = score == 0 ? null : score,
                     EpisodesWatched = episodesWatched,
-                    TotalEpisodes = totalEpisodes == 0 ? null : totalEpisodes,
-                    UserId = userId,
-                };
+                });
 
-                switch (imageSource)
-                {
-                    case ImageSource.Local:
-                    {
-                        // Jikan → download bytes
-                        var imageUrl = await GetJikanImageUrlAsync(malId);
-                        if (imageUrl is not null)
-                        {
-                            var (data, mime) = await DownloadImageAsync(imageUrl);
-                            anime.CoverImageUrl = imageUrl;
-                            anime.CoverImageData = data;
-                            anime.CoverImageMimeType = mime;
-                        }
-                        break;
-                    }
-                    case ImageSource.MyAnimeList:
-                    {
-                        // Jikan → store URL only
-                        anime.CoverImageUrl = await GetJikanImageUrlAsync(malId);
-                        break;
-                    }
-                    case ImageSource.Anilist:
-                    {
-                        // Use pre-fetched AniList image URL
-                        anime.CoverImageUrl = anilistInfo?.ImageUrl;
-                        break;
-                    }
-                }
-
-                db.Animes.Add(anime);
+                existingMalIds.Add(malId);
                 imported++;
             }
             catch (Exception ex)
@@ -122,7 +138,7 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
         return new MalImportResultDto(imported, skipped, errors);
     }
 
-    public XDocument ExportAsync(IEnumerable<Anime> animes)
+    public XDocument ExportAsync(IEnumerable<UserAnime> userAnimes)
     {
         var doc = new XDocument(
             new XDeclaration("1.0", "UTF-8", null),
@@ -130,13 +146,13 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
                 new XElement("myinfo",
                     new XElement("export_type", "anime")
                 ),
-                animes.Select(a => new XElement("anime",
-                    new XElement("series_animedb_id", a.MalId?.ToString() ?? "0"),
-                    new XElement("series_title", a.Title),
-                    new XElement("series_episodes", a.TotalEpisodes?.ToString() ?? "0"),
-                    new XElement("my_watched_episodes", a.EpisodesWatched),
-                    new XElement("my_score", a.Score?.ToString() ?? "0"),
-                    new XElement("my_status", a.Status switch
+                userAnimes.Select(ua => new XElement("anime",
+                    new XElement("series_animedb_id", ua.Anime.MalId?.ToString() ?? "0"),
+                    new XElement("series_title", ua.Anime.Title),
+                    new XElement("series_episodes", ua.Anime.TotalEpisodes?.ToString() ?? "0"),
+                    new XElement("my_watched_episodes", ua.EpisodesWatched),
+                    new XElement("my_score", ua.Score?.ToString() ?? "0"),
+                    new XElement("my_status", ua.Status switch
                     {
                         AnimeStatus.Watching     => "Watching",
                         AnimeStatus.Completed    => "Completed",
@@ -153,8 +169,6 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
 
     private record AnilistMediaInfo(int AnilistId, string? ImageUrl);
 
-    // Batch-fetches AniList id and cover image URL for a list of MAL IDs.
-    // AniList supports querying by idMal_in which avoids per-entry requests.
     private async Task<Dictionary<int, AnilistMediaInfo>> FetchAnilistMediaInfoAsync(List<int> malIds)
     {
         var result = new Dictionary<int, AnilistMediaInfo>();
@@ -188,8 +202,8 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
                 if (!response.IsSuccessStatusCode) continue;
 
                 var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                var media = doc.RootElement.GetProperty("data").GetProperty("Page").GetProperty("media");
+                using var jsonDoc = JsonDocument.Parse(json);
+                var media = jsonDoc.RootElement.GetProperty("data").GetProperty("Page").GetProperty("media");
 
                 foreach (var m in media.EnumerateArray())
                 {
@@ -202,7 +216,7 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
                 }
 
                 if (i + batchSize < malIds.Count)
-                    await Task.Delay(1100); // AniList rate limiting between batches
+                    await Task.Delay(1100);
             }
             catch
             {
@@ -213,8 +227,6 @@ public class MalImportService(AppDbContext db, HttpClient httpClient)
         return result;
     }
 
-    // Jikan (unofficial MAL API) — rate limit ~3 req/s; 400ms delay is safe.
-    // Note: large MAL lists will be slow when image source is Local or MyAnimeList.
     private async Task<string?> GetJikanImageUrlAsync(int malId)
     {
         try

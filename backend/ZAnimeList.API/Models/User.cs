@@ -10,5 +10,5 @@ public class User
     public UserRole Role { get; set; } = UserRole.User;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public List<Anime> Animes { get; set; } = [];
+    public List<UserAnime> UserAnimes { get; set; } = [];
 }

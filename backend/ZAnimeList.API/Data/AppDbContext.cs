@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AnimeGenre> AnimeGenres => Set<AnimeGenre>();
     public DbSet<AppSettings> Settings => Set<AppSettings>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserAnime> UserAnimes => Set<UserAnime>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,15 +27,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(g => g.AnimeGenres)
             .HasForeignKey(ag => ag.GenreId);
 
-        modelBuilder.Entity<Anime>()
-            .Property(a => a.Status)
+        modelBuilder.Entity<UserAnime>()
+            .Property(ua => ua.Status)
             .HasConversion<string>();
 
-        modelBuilder.Entity<Anime>()
-            .HasOne(a => a.User)
-            .WithMany(u => u.Animes)
-            .HasForeignKey(a => a.UserId)
+        modelBuilder.Entity<UserAnime>()
+            .HasOne(ua => ua.User)
+            .WithMany(u => u.UserAnimes)
+            .HasForeignKey(ua => ua.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserAnime>()
+            .HasOne(ua => ua.Anime)
+            .WithMany(a => a.UserAnimes)
+            .HasForeignKey(ua => ua.AnimeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserAnime>()
+            .HasIndex(ua => new { ua.UserId, ua.AnimeId })
+            .IsUnique();
 
         modelBuilder.Entity<Genre>()
             .HasIndex(g => g.Name)
