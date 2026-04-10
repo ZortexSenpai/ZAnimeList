@@ -120,6 +120,8 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var statusStr = item.GetProperty("status").GetString() ?? string.Empty;
                     var score = item.GetProperty("score").GetDouble();
                     var progress = item.GetProperty("progress").GetInt32();
+                    var startedAt = ParseAnilistDate(item.GetProperty("startedAt"));
+                    var completedAt = ParseAnilistDate(item.GetProperty("completedAt"));
 
                     var status = statusStr switch
                     {
@@ -180,6 +182,8 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                         Status = status,
                         Score = score > 0 ? (int)score : null,
                         EpisodesWatched = progress,
+                        StartedAt = startedAt,
+                        FinishedAt = completedAt,
                     });
 
                     existingAnilistIds.Add(anilistId);
@@ -241,6 +245,8 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var statusStr = entry.GetProperty("status").GetString() ?? string.Empty;
                     var score = entry.GetProperty("score").GetDouble();
                     var progress = entry.GetProperty("progress").GetInt32();
+                    var startedAt = entry.TryGetProperty("startedAt", out var sAt) ? ParseAnilistDate(sAt) : null;
+                    var completedAt = entry.TryGetProperty("completedAt", out var cAt) ? ParseAnilistDate(cAt) : null;
                     var totalEpisodes = media.TryGetProperty("episodes", out var ep) && ep.ValueKind != JsonValueKind.Null
                         ? ep.GetInt32()
                         : (int?)null;
@@ -312,6 +318,8 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                         Status = status,
                         Score = score > 0 ? (int)score : null,
                         EpisodesWatched = progress,
+                        StartedAt = startedAt,
+                        FinishedAt = completedAt,
                     });
 
                     existingAnilistIds.Add(anilistId);

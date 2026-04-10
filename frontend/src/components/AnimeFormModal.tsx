@@ -51,6 +51,8 @@ export function AnimeFormModal({ anime, onSave, onClose }: Props) {
         episodesWatched: anime.episodesWatched,
         status: anime.status,
         score: anime.score ?? undefined,
+        startedAt: anime.startedAt ? anime.startedAt.slice(0, 10) : undefined,
+        finishedAt: anime.finishedAt ? anime.finishedAt.slice(0, 10) : undefined,
         genres: [...anime.genres],
       });
     } else {
@@ -239,6 +241,15 @@ export function AnimeFormModal({ anime, onSave, onClose }: Props) {
           <Field label="Score (1–10)">
             <input type="number" min={1} max={10} value={form.score ?? ''} onChange={e => setForm(f => ({ ...f, score: e.target.value ? +e.target.value : undefined }))} className={inputCls} />
           </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Started At">
+              <input type="date" value={form.startedAt ?? ''} onChange={e => setForm(f => ({ ...f, startedAt: e.target.value || undefined }))} className={inputCls} />
+            </Field>
+            <Field label="Finished At">
+              <input type="date" value={form.finishedAt ?? ''} onChange={e => setForm(f => ({ ...f, finishedAt: e.target.value || undefined }))} className={inputCls} />
+            </Field>
+          </div>
 
           <Field label="Synopsis">
             <textarea rows={3} value={form.synopsis} onChange={e => setForm(f => ({ ...f, synopsis: e.target.value }))} className={inputCls} />
