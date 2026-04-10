@@ -68,11 +68,16 @@ using (var scope = app.Services.CreateScope())
 
     if (!dbContext.Users.Any())
     {
+        var defaultUsername = app.Configuration["DefaultUser:Username"] ?? "admin";
+        var defaultPassword = app.Configuration["DefaultUser:Password"] ?? "admin";
+        var defaultRoleStr = app.Configuration["DefaultUser:Role"] ?? "Admin";
+        var defaultRole = Enum.TryParse<UserRole>(defaultRoleStr, ignoreCase: true, out var role) ? role : UserRole.Admin;
+
         dbContext.Users.Add(new User
         {
-            Username = "admin",
-            PasswordHash = PasswordHasher.Hash("admin"),
-            Role = UserRole.Admin,
+            Username = defaultUsername,
+            PasswordHash = PasswordHasher.Hash(defaultPassword),
+            Role = defaultRole,
         });
         dbContext.SaveChanges();
     }

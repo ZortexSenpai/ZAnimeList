@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+.vscode/
+*.user
+*.suo
+
+# OS
+.DS_Store

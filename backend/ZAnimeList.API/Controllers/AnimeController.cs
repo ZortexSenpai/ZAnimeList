@@ -99,11 +99,11 @@ public class AnimeController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}/image")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetImage(int id)
     {
-        var userId = GetUserId();
         var anime = await db.Animes
-            .Where(a => a.Id == id && a.UserId == userId)
+            .Where(a => a.Id == id)
             .Select(a => new { a.CoverImageData, a.CoverImageMimeType })
             .FirstOrDefaultAsync();
 
