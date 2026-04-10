@@ -21,19 +21,24 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
   const hasActiveFilters = filters.status || filters.genres?.length || filters.search;
 
   return (
-    <div className="flex flex-wrap gap-3 items-center">
-      <input
-        type="text"
-        placeholder="Search anime..."
-        value={filters.search ?? ''}
-        onChange={e => onChange({ ...filters, search: e.target.value || undefined })}
-        className={selectCls + ' w-52'}
-      />
+    <div className="flex flex-wrap gap-2 items-center">
+      {/* Search */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm pointer-events-none">⌕</span>
+        <input
+          type="text"
+          placeholder="Search…"
+          value={filters.search ?? ''}
+          onChange={e => onChange({ ...filters, search: e.target.value || undefined })}
+          className={inputCls + ' pl-8 w-44'}
+        />
+      </div>
 
+      {/* Status */}
       <select
         value={filters.status ?? ''}
         onChange={e => onChange({ ...filters, status: (e.target.value as AnimeStatus) || undefined })}
-        className={selectCls}
+        className={inputCls}
       >
         <option value="">All Statuses</option>
         {ALL_STATUSES.map(s => (
@@ -41,6 +46,7 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
         ))}
       </select>
 
+      {/* Genres */}
       <MultiSelect
         options={genres}
         selected={filters.genres ?? []}
@@ -48,13 +54,14 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
         onChange={selected => onChange({ ...filters, genres: selected.length ? selected : undefined })}
       />
 
-      <span className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
+      <div className="w-px h-5 bg-zinc-200 dark:bg-white/10" />
 
+      {/* Sort */}
       <div className="flex items-center gap-1">
         <select
-          value={filters.sortBy ?? 'title'}
+          value={filters.sortBy ?? 'score'}
           onChange={e => onChange({ ...filters, sortBy: e.target.value as SortBy })}
-          className={selectCls}
+          className={inputCls}
         >
           {SORT_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -64,7 +71,7 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
         <button
           onClick={toggleSortDir}
           title={filters.sortDesc ? 'Descending' : 'Ascending'}
-          className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+          className={inputCls + ' w-9 px-0 text-center font-bold'}
         >
           {filters.sortDesc ? '↓' : '↑'}
         </button>
@@ -73,13 +80,13 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
       {hasActiveFilters && (
         <button
           onClick={() => onChange({ sortBy: filters.sortBy, sortDesc: filters.sortDesc })}
-          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline"
+          className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150"
         >
-          Clear filters
+          Clear
         </button>
       )}
     </div>
   );
 }
 
-const selectCls = 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
+const inputCls = 'border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-zinc-900 dark:text-zinc-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-150 placeholder-zinc-400 dark:placeholder-zinc-600';

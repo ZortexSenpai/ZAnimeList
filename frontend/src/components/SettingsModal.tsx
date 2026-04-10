@@ -50,40 +50,44 @@ export function SettingsModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl shadow-black/40 border border-zinc-200 dark:border-white/10 w-full max-w-lg flex flex-col animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/5">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Settings</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all text-xl"
           >
             ×
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-6 py-5">
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
               Cover Image Source
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            </p>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">
               Controls where cover images are fetched from during import. Applies to future imports only.
             </p>
 
             {loading ? (
-              <div className="text-sm text-gray-400 animate-pulse">Loading…</div>
+              <div className="space-y-2">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className="h-16 rounded-xl bg-zinc-100 dark:bg-white/5 animate-pulse" />
+                ))}
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {IMAGE_SOURCE_OPTIONS.map(opt => (
                   <label
                     key={opt.value}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
                       imageSource === opt.value
-                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/10'
+                        : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5'
                     }`}
                   >
                     <input
@@ -95,8 +99,8 @@ export function SettingsModal({ onClose }: Props) {
                       className="mt-0.5 accent-indigo-600 shrink-0"
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{opt.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.description}</div>
+                      <div className="text-sm font-medium text-zinc-900 dark:text-white">{opt.label}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{opt.description}</div>
                     </div>
                   </label>
                 ))}
@@ -106,19 +110,19 @@ export function SettingsModal({ onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-zinc-100 dark:border-white/5">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="px-4 py-2 text-sm rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 transition-all"
           >
             Close
           </button>
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 font-medium transition-colors"
+            className="px-4 py-2 text-sm rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
           >
-            {saving ? 'Saving…' : saved ? 'Saved!' : 'Save'}
+            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
           </button>
         </div>
       </div>

@@ -8,8 +8,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-        <span className="animate-pulse text-gray-400">Loading...</span>
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <span className="text-lg font-black bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent animate-pulse tracking-tight">
+          ZAnimeList
+        </span>
       </div>
     );
   }

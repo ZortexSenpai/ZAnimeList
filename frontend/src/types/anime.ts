@@ -68,10 +68,11 @@ export const STATUS_LABELS: Record<AnimeStatus, string> = {
   Dropped: 'Dropped',
 };
 
+// Designed for dark overlay backgrounds (image cards)
 export const STATUS_COLORS: Record<AnimeStatus, string> = {
-  Watching: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  Completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  PlanToWatch: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  OnHold: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  Dropped: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  Watching:    'bg-sky-500/20 text-sky-300 ring-1 ring-inset ring-sky-500/40',
+  Completed:   'bg-emerald-500/20 text-emerald-300 ring-1 ring-inset ring-emerald-500/40',
+  PlanToWatch: 'bg-violet-500/20 text-violet-300 ring-1 ring-inset ring-violet-500/40',
+  OnHold:      'bg-amber-500/20 text-amber-300 ring-1 ring-inset ring-amber-500/40',
+  Dropped:     'bg-rose-500/20 text-rose-300 ring-1 ring-inset ring-rose-500/40',
 };
