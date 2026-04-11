@@ -229,7 +229,11 @@ export function SpeedDial() {
       </div>
 
       {showImport && (
-        <ImportModal onClose={() => setShowImport(false)} onImported={handleImported} />
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onImported={handleImported}
+          onOpenSettings={() => { setShowImport(false); setShowSettings(true); }}
+        />
       )}
       {showSettings && (
         <SettingsModal onClose={() => setShowSettings(false)} />

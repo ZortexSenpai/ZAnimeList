@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { importMal, importAnilistByUsername, importAnilistFile, exportMal, type ImportResult, type ImportProgress } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
   onClose: () => void;
   onImported: () => void;
+  onOpenSettings?: () => void;
 }
 
 type Provider = 'mal' | 'anilist';
 type AnilistMethod = 'username' | 'file';
 
-export function ImportModal({ onClose, onImported }: Props) {
+export function ImportModal({ onClose, onImported, onOpenSettings }: Props) {
+  const { user } = useAuth();
   const [provider, setProvider] = useState<Provider>('mal');
   const [anilistMethod, setAnilistMethod] = useState<AnilistMethod>('username');
-  const [username, setUsername] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
@@ -32,8 +34,8 @@ export function ImportModal({ onClose, onImported }: Props) {
         res = await importMal(file, onProgress);
       } else {
         if (anilistMethod === 'username') {
-          if (!username.trim()) { setError('Please enter your AniList username.'); return; }
-          res = await importAnilistByUsername(username.trim(), onProgress);
+          if (!user?.anilistUsername) { setError('Set your AniList username in Settings first.'); return; }
+          res = await importAnilistByUsername(user.anilistUsername, onProgress);
         } else {
           if (!file) { setError('Please select your AniList JSON export file.'); return; }
           res = await importAnilistFile(file, onProgress);
@@ -109,13 +111,34 @@ export function ImportModal({ onClose, onImported }: Props) {
               </div>
 
               {anilistMethod === 'username' ? (
-                <input
-                  type="text"
-                  placeholder="AniList username"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  className="border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-zinc-900 dark:text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder-zinc-400 dark:placeholder-zinc-600"
-                />
+                user?.anilistUsername ? (
+                  <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.03]">
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">Syncing as</span>
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{user.anilistUsername}</span>
+                    {onOpenSettings && (
+                      <button
+                        onClick={onOpenSettings}
+                        className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 hover:underline shrink-0"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10">
+                    <p className="text-sm text-amber-800 dark:text-amber-300 leading-snug">
+                      No AniList username set. Add one in <span className="font-semibold">Settings → Account Links</span> to sync by username.
+                    </p>
+                    {onOpenSettings && (
+                      <button
+                        onClick={onOpenSettings}
+                        className="self-start text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        Open Settings →
+                      </button>
+                    )}
+                  </div>
+                )
               ) : (
                 <FileInput accept=".json" onFile={setFile} current={file} />
               )}
