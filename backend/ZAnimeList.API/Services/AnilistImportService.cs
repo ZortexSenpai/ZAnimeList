@@ -97,8 +97,28 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     if (onProgress != null)
                         await onProgress(new ImportProgressDto(++processed, null, titleRomaji));
 
+                    var statusStr = item.GetProperty("status").GetString() ?? string.Empty;
+                    var score = item.GetProperty("score").GetDouble();
+                    var progress = item.GetProperty("progress").GetInt32();
+                    var startedAt = ParseAnilistDate(item.GetProperty("startedAt"));
+                    var completedAt = ParseAnilistDate(item.GetProperty("completedAt"));
+
                     if (existingAnilistIds.Contains(anilistId))
                     {
+                        // Update dates on existing entry if not yet set
+                        if (startedAt.HasValue || completedAt.HasValue)
+                        {
+                            var existing = await db.UserAnimes
+                                .Where(ua => ua.UserId == userId && ua.Anime.AnilistId == anilistId)
+                                .FirstOrDefaultAsync();
+                            if (existing != null && (existing.StartedAt == null || existing.FinishedAt == null))
+                            {
+                                if (startedAt.HasValue && existing.StartedAt == null)
+                                    existing.StartedAt = startedAt;
+                                if (completedAt.HasValue && existing.FinishedAt == null)
+                                    existing.FinishedAt = completedAt;
+                            }
+                        }
                         skipped++;
                         continue;
                     }
@@ -118,12 +138,6 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var description = media.GetProperty("description").ValueKind == JsonValueKind.Null
                         ? null
                         : media.GetProperty("description").GetString();
-
-                    var statusStr = item.GetProperty("status").GetString() ?? string.Empty;
-                    var score = item.GetProperty("score").GetDouble();
-                    var progress = item.GetProperty("progress").GetInt32();
-                    var startedAt = ParseAnilistDate(item.GetProperty("startedAt"));
-                    var completedAt = ParseAnilistDate(item.GetProperty("completedAt"));
 
                     var status = statusStr switch
                     {

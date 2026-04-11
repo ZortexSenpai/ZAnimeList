@@ -67,9 +67,10 @@ export function AnimeCard({ anime, onEdit, onDelete, style }: Props) {
           </h3>
 
           {anime.synopsis && (
-            <p className="text-white/60 text-xs leading-relaxed line-clamp-4">
-              {anime.synopsis}
-            </p>
+            <p
+              className="text-white/60 text-xs leading-relaxed line-clamp-4"
+              dangerouslySetInnerHTML={{ __html: anime.synopsis }}
+            />
           )}
 
           {anime.genres.length > 0 && (
