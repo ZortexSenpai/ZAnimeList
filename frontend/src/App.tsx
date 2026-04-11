@@ -1,9 +1,34 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { RecommendationsPage } from './pages/RecommendationsPage';
+
+function applyTheme(theme: string) {
+  const isDark =
+    theme === 'Dark' ||
+    (theme === 'System' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', isDark);
+}
+
+function ThemeApplicator() {
+  const { user } = useAuth();
+  const theme = user?.theme ?? 'System';
+
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme === 'System') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => applyTheme('System');
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+  }, [theme]);
+
+  return null;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -37,6 +62,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ThemeApplicator />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

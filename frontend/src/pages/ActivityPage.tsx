@@ -116,7 +116,6 @@ function StatsSection({ stats }: { stats: ActivityStats }) {
 
   const peakDay = stats.dayDistribution.indexOf(Math.max(...stats.dayDistribution));
 
-  const monthlyMax = Math.max(...stats.monthlyActivity.map(m => m.count), 1);
   const monthLabels = stats.monthlyActivity.map(m => MONTHS[m.month - 1]);
   const monthValues = stats.monthlyActivity.map(m => m.count);
 

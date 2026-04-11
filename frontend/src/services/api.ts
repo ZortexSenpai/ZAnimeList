@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { Anime, AnimeFilters, CreateAnime, UpdateAnime } from '../types/anime';
-import type { TokenResponse, User, UserRole } from '../types/auth';
+import type { TokenResponse, User, UserRole, Theme } from '../types/auth';
 import type { WatchActivity } from '../types/activity';
 
 const api = axios.create({
@@ -35,6 +35,18 @@ export const getUsers = () =>
 
 export const deleteUser = (id: number) =>
   api.delete(`/auth/users/${id}`);
+
+export const updateProfile = (data: { anilistUsername: string | null; malUsername: string | null; theme: Theme }) =>
+  api.put<User>('/auth/profile', data).then(r => r.data);
+
+export const uploadProfilePicture = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<User>('/auth/profile/picture', form).then(r => r.data);
+};
+
+export const deleteProfilePicture = () =>
+  api.delete<User>('/auth/profile/picture').then(r => r.data);
 
 // Anime CRUD
 export const getAnimes = (filters: AnimeFilters = {}) =>
@@ -171,7 +183,7 @@ export const updateSettings = (settings: Settings) =>
   api.put<Settings>('/settings', { imageSource: settings.imageSource }).then(r => r.data);
 
 // Activity
-export { WatchActivity };
+export type { WatchActivity };
 export const getActivity = (params: { userAnimeId?: number; page?: number; pageSize?: number } = {}) =>
   api.get<WatchActivity[]>('/activity', { params }).then(r => r.data);
 

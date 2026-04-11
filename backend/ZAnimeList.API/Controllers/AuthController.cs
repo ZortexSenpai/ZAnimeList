@@ -23,7 +23,7 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         if (user is null || !PasswordHasher.Verify(req.Password, user.PasswordHash))
             return Unauthorized(new { message = "Invalid username or password." });
 
-        return Ok(new TokenResponse(GenerateToken(user), new UserDto(user.Id, user.Username, user.Role)));
+        return Ok(new TokenResponse(GenerateToken(user), ToDto(user)));
     }
 
     [HttpPost("register")]
@@ -45,7 +45,7 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        return Created(string.Empty, new UserDto(user.Id, user.Username, user.Role));
+        return Created(string.Empty, ToDto(user));
     }
 
     [HttpGet("me")]
@@ -55,17 +55,15 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         var userId = GetUserId();
         var user = await db.Users.FindAsync(userId);
         if (user is null) return NotFound();
-        return Ok(new UserDto(user.Id, user.Username, user.Role));
+        return Ok(ToDto(user));
     }
 
     [HttpGet("users")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-        var users = await db.Users
-            .Select(u => new UserDto(u.Id, u.Username, u.Role))
-            .ToListAsync();
-        return Ok(users);
+        var users = await db.Users.ToListAsync();
+        return Ok(users.Select(ToDto));
     }
 
     [HttpDelete("users/{id:int}")]
@@ -83,8 +81,82 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         return NoContent();
     }
 
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> UpdateProfile(UpdateProfileRequest req)
+    {
+        var userId = GetUserId();
+        var user = await db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        var validThemes = new[] { "System", "Light", "Dark" };
+        if (!validThemes.Contains(req.Theme))
+            return BadRequest(new { message = "Invalid theme value." });
+
+        user.AnilistUsername = string.IsNullOrWhiteSpace(req.AnilistUsername) ? null : req.AnilistUsername.Trim();
+        user.MalUsername = string.IsNullOrWhiteSpace(req.MalUsername) ? null : req.MalUsername.Trim();
+        user.Theme = req.Theme;
+
+        await db.SaveChangesAsync();
+        return Ok(ToDto(user));
+    }
+
+    [HttpGet("profile/picture")]
+    [Authorize]
+    public async Task<IActionResult> GetProfilePicture()
+    {
+        var userId = GetUserId();
+        var user = await db.Users.FindAsync(userId);
+        if (user is null || user.ProfilePictureData is null)
+            return NotFound();
+
+        return File(user.ProfilePictureData, user.ProfilePictureMimeType ?? "image/jpeg");
+    }
+
+    [HttpPost("profile/picture")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file)
+    {
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { message = "File must be under 5 MB." });
+
+        var allowed = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+        if (!allowed.Contains(file.ContentType))
+            return BadRequest(new { message = "Only JPEG, PNG, GIF, and WebP images are accepted." });
+
+        var userId = GetUserId();
+        var user = await db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        user.ProfilePictureData = ms.ToArray();
+        user.ProfilePictureMimeType = file.ContentType;
+
+        await db.SaveChangesAsync();
+        return Ok(ToDto(user));
+    }
+
+    [HttpDelete("profile/picture")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> DeleteProfilePicture()
+    {
+        var userId = GetUserId();
+        var user = await db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        user.ProfilePictureData = null;
+        user.ProfilePictureMimeType = null;
+
+        await db.SaveChangesAsync();
+        return Ok(ToDto(user));
+    }
+
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    private static UserDto ToDto(User user) =>
+        new(user.Id, user.Username, user.Role, user.AnilistUsername, user.MalUsername, user.Theme, user.ProfilePictureData != null);
 
     private string GenerateToken(User user)
     {

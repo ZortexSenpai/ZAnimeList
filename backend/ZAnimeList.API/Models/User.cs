@@ -8,6 +8,11 @@ public class User
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.User;
+    public string? AnilistUsername { get; set; }
+    public string? MalUsername { get; set; }
+    public string Theme { get; set; } = "System";
+    public byte[]? ProfilePictureData { get; set; }
+    public string? ProfilePictureMimeType { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public List<UserAnime> UserAnimes { get; set; } = [];
