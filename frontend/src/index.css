@@ -40,3 +40,20 @@ body {
 .animate-fade-in {
   animation: fade-in 0.3s ease both;
 }
+
+/* SAO speed dial — trigger scan-line sweep */
+@keyframes sao-scan {
+  0%   { top: -1px; opacity: 0; }
+  15%  { opacity: 0.75; }
+  85%  { opacity: 0.75; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.sao-scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.55), transparent);
+  animation: sao-scan 3s ease-in-out infinite;
+  pointer-events: none;
+}

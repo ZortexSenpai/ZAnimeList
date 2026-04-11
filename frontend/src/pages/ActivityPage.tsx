@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getActivity, getActivityStats } from '../services/api';
 import type { WatchActivity, ActivityStats } from '../types/activity';
 import { useAuth } from '../contexts/AuthContext';
@@ -265,8 +264,7 @@ function StatsSkeletons() {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export function ActivityPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activities, setActivities] = useState<WatchActivity[]>([]);
   const [stats, setStats] = useState<ActivityStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -304,25 +302,8 @@ export function ActivityPage() {
 
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/')}
-              className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors duration-150 font-medium"
-            >
-              ← Library
-            </button>
-            <span className="h-4 w-px bg-zinc-200 dark:bg-white/10" />
-            <span className="text-base font-semibold text-zinc-900 dark:text-white">Activity</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
-            <button
-              onClick={logout}
-              className="h-8 px-3 rounded-lg text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150"
-            >
-              Sign out
-            </button>
-          </div>
+          <span className="text-base font-semibold text-zinc-900 dark:text-white">Activity</span>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
         </div>
       </header>
 

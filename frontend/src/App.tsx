@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { RecommendationsPage } from './pages/RecommendationsPage';
+import { SpeedDial } from './components/SpeedDial';
 
 function applyTheme(theme: string) {
   const isDark =
@@ -43,7 +44,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  return user ? <><SpeedDial />{children}</> : <Navigate to="/login" replace />;
 }
 
 function AppRoutes() {

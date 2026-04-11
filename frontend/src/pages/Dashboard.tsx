@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import { AnimeFilter } from '../components/AnimeFilter';
 import { AnimeFormModal } from '../components/AnimeFormModal';
-import { ImportModal } from '../components/ImportModal';
-import { SettingsModal } from '../components/SettingsModal';
 import { getAnimes, getGenres, createAnime, updateAnime, deleteAnime } from '../services/api';
 import type { Anime, AnimeFilters, CreateAnime } from '../types/anime';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,16 +15,13 @@ function SkeletonCard() {
 }
 
 export function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [animes, setAnimes] = useState<Anime[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [filters, setFilters] = useState<AnimeFilters>({ sortBy: 'score', sortDesc: true });
   const [loading, setLoading] = useState(true);
   const [editTarget, setEditTarget] = useState<Anime | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const fetchAnimes = useCallback(async () => {
     setLoading(true);
@@ -40,6 +34,13 @@ export function Dashboard() {
   }, [filters]);
 
   useEffect(() => { fetchAnimes(); }, [fetchAnimes]);
+
+  // Triggered by SpeedDial's ImportModal after a successful import
+  useEffect(() => {
+    const handler = () => fetchAnimes();
+    window.addEventListener('zanime:refresh', handler);
+    return () => window.removeEventListener('zanime:refresh', handler);
+  }, [fetchAnimes]);
 
   useEffect(() => {
     getGenres().then(setGenres).catch(() => {});
@@ -72,45 +73,7 @@ export function Dashboard() {
             ZAnimeList
           </span>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/activity')}
-              className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 font-medium"
-            >
-              Activity
-            </button>
-
-            <button
-              onClick={() => navigate('/recommendations')}
-              className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 font-medium"
-            >
-              Rewatch
-            </button>
-
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              title="Settings"
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 text-base"
-            >
-              ⚙
-            </button>
-
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 font-medium"
-            >
-              Import / Export
-            </button>
-
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all duration-150 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
-            >
-              <span className="text-base leading-none">+</span> Add
-            </button>
-
-            <div className="h-4 w-px bg-zinc-200 dark:bg-white/10 mx-1" />
-
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
                 {user?.username}
@@ -123,10 +86,10 @@ export function Dashboard() {
             </div>
 
             <button
-              onClick={logout}
-              className="h-8 px-3 rounded-lg text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all duration-150 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
             >
-              Sign out
+              <span className="text-base leading-none">+</span> Add
             </button>
           </div>
         </div>
@@ -158,20 +121,12 @@ export function Dashboard() {
               <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">No anime here yet</p>
               <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">Add titles or import your list to get started</p>
             </div>
-            <div className="flex gap-2 mt-1">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all duration-150 shadow-lg shadow-indigo-500/20"
-              >
-                + Add Anime
-              </button>
-              <button
-                onClick={() => setShowImportModal(true)}
-                className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150"
-              >
-                Import List
-              </button>
-            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="mt-1 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all duration-150 shadow-lg shadow-indigo-500/20"
+            >
+              + Add Anime
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -197,16 +152,6 @@ export function Dashboard() {
         />
       )}
 
-      {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onImported={() => { fetchAnimes(); }}
-        />
-      )}
-
-      {showSettingsModal && (
-        <SettingsModal onClose={() => setShowSettingsModal(false)} />
-      )}
     </div>
   );
 }

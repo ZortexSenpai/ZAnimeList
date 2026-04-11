@@ -104,7 +104,7 @@ function RewatchCard({ rec, rank }: { rec: RewatchRecommendation; rank: number }
 }
 
 export function RecommendationsPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [recs, setRecs] = useState<RewatchRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,26 +123,8 @@ export function RecommendationsPage() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/')}
-              className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors duration-150 font-medium"
-            >
-              ← Library
-            </button>
-            <span className="h-4 w-px bg-zinc-200 dark:bg-white/10" />
-            <span className="text-base font-semibold text-zinc-900 dark:text-white">Rewatch Picks</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
-            <button
-              onClick={logout}
-              className="h-8 px-3 rounded-lg text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150"
-            >
-              Sign out
-            </button>
-          </div>
+          <span className="text-base font-semibold text-zinc-900 dark:text-white">Rewatch Picks</span>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
         </div>
       </header>
 
