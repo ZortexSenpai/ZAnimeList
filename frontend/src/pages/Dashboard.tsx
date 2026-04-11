@@ -42,6 +42,13 @@ export function Dashboard() {
     return () => window.removeEventListener('zanime:refresh', handler);
   }, [fetchAnimes]);
 
+  // Triggered by SpeedDial's Add Anime item
+  useEffect(() => {
+    const handler = () => setShowAddModal(true);
+    window.addEventListener('zanime:add', handler);
+    return () => window.removeEventListener('zanime:add', handler);
+  }, []);
+
   useEffect(() => {
     getGenres().then(setGenres).catch(() => {});
   }, [animes]);
@@ -73,25 +80,9 @@ export function Dashboard() {
             ZAnimeList
           </span>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
-                {user?.username}
-              </span>
-              {user?.role === 'Admin' && (
-                <span className="text-xs px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-semibold">
-                  admin
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all duration-150 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
-            >
-              <span className="text-base leading-none">+</span> Add
-            </button>
-          </div>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
+            {user?.username}
+          </span>
         </div>
       </header>
 

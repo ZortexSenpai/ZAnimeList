@@ -55,6 +55,16 @@ function IconSettings() {
   );
 }
 
+function IconAdd() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <rect x="1" y="1" width="13" height="13" rx="2" />
+      <line x1="7.5" y1="4.5" x2="7.5" y2="10.5" />
+      <line x1="4.5" y1="7.5" x2="10.5" y2="7.5" />
+    </svg>
+  );
+}
+
 function IconProfile() {
   return (
     <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -132,6 +142,11 @@ export function SpeedDial() {
       action: () => navigate('/profile'),
       isActive: location.pathname === '/profile',
     },
+    ...(location.pathname === '/' ? [{
+      icon: <IconAdd />,
+      label: 'Add Anime',
+      action: () => window.dispatchEvent(new CustomEvent('zanime:add')),
+    }] : []),
     {
       icon: <IconLibrary />,
       label: 'Library',
