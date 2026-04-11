@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import { AnimeFilter } from '../components/AnimeFilter';
 import { AnimeFormModal } from '../components/AnimeFormModal';
@@ -18,6 +19,7 @@ function SkeletonCard() {
 
 export function Dashboard() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [animes, setAnimes] = useState<Anime[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [filters, setFilters] = useState<AnimeFilters>({ sortBy: 'score', sortDesc: true });
@@ -71,6 +73,13 @@ export function Dashboard() {
           </span>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/activity')}
+              className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 font-medium"
+            >
+              Activity
+            </button>
+
             <button
               onClick={() => setShowSettingsModal(true)}
               title="Settings"

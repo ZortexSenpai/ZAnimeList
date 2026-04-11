@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AppSettings> Settings => Set<AppSettings>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserAnime> UserAnimes => Set<UserAnime>();
+    public DbSet<WatchActivity> WatchActivities => Set<WatchActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,5 +63,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<User>()
             .Property(u => u.Role)
             .HasConversion<string>();
+
+        modelBuilder.Entity<WatchActivity>()
+            .HasOne(wa => wa.User)
+            .WithMany()
+            .HasForeignKey(wa => wa.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<WatchActivity>()
+            .HasIndex(wa => new { wa.UserId, wa.AnilistActivityId })
+            .IsUnique();
+
+        modelBuilder.Entity<WatchActivity>()
+            .HasIndex(wa => new { wa.UserId, wa.CreatedAt });
     }
 }

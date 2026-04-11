@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ZAnimeList.API.Data;
 
@@ -10,9 +11,11 @@ using ZAnimeList.API.Data;
 namespace ZAnimeList.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411120000_AddWatchActivity")]
+    partial class AddWatchActivity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
@@ -266,6 +269,17 @@ namespace ZAnimeList.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ZAnimeList.API.Models.WatchActivity", b =>
+                {
+                    b.HasOne("ZAnimeList.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ZAnimeList.API.Models.Anime", b =>
                 {
                     b.Navigation("AnimeGenres");
@@ -276,17 +290,6 @@ namespace ZAnimeList.API.Migrations
             modelBuilder.Entity("ZAnimeList.API.Models.Genre", b =>
                 {
                     b.Navigation("AnimeGenres");
-                });
-
-            modelBuilder.Entity("ZAnimeList.API.Models.WatchActivity", b =>
-                {
-                    b.HasOne("ZAnimeList.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ZAnimeList.API.Models.User", b =>

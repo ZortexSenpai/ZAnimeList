@@ -19,6 +19,9 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         var page = 1;
         bool hasNextPage;
 
+        // Get AniList numeric user ID early (needed for activity import after list import)
+        var anilistUserId = await GetAnilistUserIdAsync(username);
+
         var settings = await db.Settings.FindAsync(1) ?? new AppSettings();
         var imageSource = settings.ImageSource;
 
@@ -215,6 +218,14 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
             await db.SaveChangesAsync();
             page++;
         } while (hasNextPage);
+
+        // Import activity log after the list
+        if (anilistUserId.HasValue)
+        {
+            if (onProgress != null)
+                await onProgress(new ImportProgressDto(0, null, "Fetching activity…"));
+            await ImportActivitiesAsync(anilistUserId.Value, userId, onProgress);
+        }
 
         return new AnilistImportResultDto(imported, skipped, errors);
     }
@@ -422,6 +433,146 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         {
             return [];
         }
+    }
+
+    private async Task<int?> GetAnilistUserIdAsync(string username)
+    {
+        var query = """
+            query ($username: String) {
+              User(name: $username) {
+                id
+              }
+            }
+            """;
+
+        var payload = JsonSerializer.Serialize(new { query, variables = new { username } });
+        var request = new HttpRequestMessage(HttpMethod.Post, AnilistApiUrl)
+        {
+            Content = new StringContent(payload, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        try
+        {
+            var response = await httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return null;
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            return doc.RootElement.GetProperty("data").GetProperty("User").GetProperty("id").GetInt32();
+        }
+        catch { return null; }
+    }
+
+    private async Task ImportActivitiesAsync(int anilistUserId, int userId, Func<ImportProgressDto, Task>? onProgress)
+    {
+        // Pre-load existing activity IDs to enable incremental sync
+        var existingIds = await db.WatchActivities
+            .Where(wa => wa.UserId == userId)
+            .Select(wa => wa.AnilistActivityId)
+            .ToHashSetAsync();
+
+        // Pre-load UserAnimeId lookup by AnilistMediaId for linking activities to list entries
+        var userAnimeByMediaId = await db.UserAnimes
+            .Where(ua => ua.UserId == userId && ua.Anime.AnilistId != null)
+            .Select(ua => new { ua.Id, ua.Anime.AnilistId })
+            .ToDictionaryAsync(ua => ua.AnilistId!.Value, ua => ua.Id);
+
+        var page = 1;
+        bool hasNextPage;
+        int activitiesImported = 0;
+
+        do
+        {
+            if (onProgress != null)
+                await onProgress(new ImportProgressDto(activitiesImported, null, $"Fetching activity page {page}…"));
+
+            var query = """
+                query ($userId: Int, $page: Int) {
+                  Page(page: $page, perPage: 50) {
+                    pageInfo { hasNextPage }
+                    activities(userId: $userId, type: ANIME_LIST, sort: ID_DESC) {
+                      ... on ListActivity {
+                        id
+                        status
+                        progress
+                        media {
+                          id
+                          title { romaji }
+                        }
+                        createdAt
+                      }
+                    }
+                  }
+                }
+                """;
+
+            var payload = JsonSerializer.Serialize(new { query, variables = new { userId = anilistUserId, page } });
+            var request = new HttpRequestMessage(HttpMethod.Post, AnilistApiUrl)
+            {
+                Content = new StringContent(payload, Encoding.UTF8, "application/json")
+            };
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                Console.Error.WriteLine($"[ActivityImport] AniList API error {response.StatusCode}: {errorBody}");
+                break;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            // Check for GraphQL-level errors (status 200 but with errors field)
+            if (doc.RootElement.TryGetProperty("errors", out var errorsEl))
+            {
+                Console.Error.WriteLine($"[ActivityImport] AniList GraphQL errors: {errorsEl}");
+                break;
+            }
+
+            var pageData = doc.RootElement.GetProperty("data").GetProperty("Page");
+            hasNextPage = pageData.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean();
+
+            foreach (var activity in pageData.GetProperty("activities").EnumerateArray())
+            {
+                // Non-ListActivity entries (TextActivity etc.) won't have "id" from our fragment
+                if (!activity.TryGetProperty("id", out var idEl)) continue;
+
+                var anilistActivityId = idEl.GetInt64();
+                if (existingIds.Contains(anilistActivityId)) continue;
+
+                var status = activity.GetProperty("status").GetString() ?? string.Empty;
+                var progress = activity.TryGetProperty("progress", out var progEl) && progEl.ValueKind != JsonValueKind.Null
+                    ? progEl.GetString() : null;
+
+                var media = activity.GetProperty("media");
+                var anilistMediaId = media.GetProperty("id").GetInt32();
+                var mediaTitle = media.GetProperty("title").GetProperty("romaji").GetString() ?? string.Empty;
+                var createdAtUnix = activity.GetProperty("createdAt").GetInt64();
+                var createdAt = DateTimeOffset.FromUnixTimeSeconds(createdAtUnix).UtcDateTime;
+
+                int? userAnimeId = userAnimeByMediaId.TryGetValue(anilistMediaId, out var uaId) ? uaId : null;
+
+                db.WatchActivities.Add(new WatchActivity
+                {
+                    UserId = userId,
+                    UserAnimeId = userAnimeId,
+                    AnilistActivityId = anilistActivityId,
+                    AnilistMediaId = anilistMediaId,
+                    MediaTitle = mediaTitle,
+                    Status = status,
+                    Progress = progress,
+                    CreatedAt = createdAt,
+                });
+
+                existingIds.Add(anilistActivityId);
+                activitiesImported++;
+            }
+
+            await db.SaveChangesAsync();
+            page++;
+        } while (hasNextPage);
     }
 
     private async Task<(byte[]? data, string? mime, string? url)> ResolveImageAsync(

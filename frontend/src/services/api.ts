@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { Anime, AnimeFilters, CreateAnime, UpdateAnime } from '../types/anime';
 import type { TokenResponse, User, UserRole } from '../types/auth';
+import type { WatchActivity } from '../types/activity';
 
 const api = axios.create({
   baseURL: '/api',
@@ -168,3 +169,8 @@ export const getSettings = () =>
 
 export const updateSettings = (settings: Settings) =>
   api.put<Settings>('/settings', { imageSource: settings.imageSource }).then(r => r.data);
+
+// Activity
+export { WatchActivity };
+export const getActivity = (params: { userAnimeId?: number; page?: number; pageSize?: number } = {}) =>
+  api.get<WatchActivity[]>('/activity', { params }).then(r => r.data);
