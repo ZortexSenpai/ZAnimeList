@@ -24,3 +24,4 @@ public record ActivityStatsDto(
 
 public record MonthlyCountDto(int Year, int Month, int Count);
 public record TopAnimeEntryDto(string Title, int Count);
+public record DailyCountDto(string Date, int Count);

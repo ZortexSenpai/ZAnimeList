@@ -190,6 +190,9 @@ export const getActivity = (params: { userAnimeId?: number; page?: number; pageS
 export const getActivityStats = () =>
   api.get<import('../types/activity').ActivityStats>('/activity/stats').then(r => r.data);
 
+export const getActivityHeatmap = () =>
+  api.get<import('../types/activity').DailyCount[]>('/activity/heatmap').then(r => r.data);
+
 // Recommendations
 export const getRewatchRecommendations = () =>
   api.get<import('../types/recommendation').RewatchRecommendation[]>('/recommendations/rewatch').then(r => r.data);

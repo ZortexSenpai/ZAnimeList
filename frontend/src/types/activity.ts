@@ -19,3 +19,8 @@ export interface ActivityStats {
   monthlyActivity: { year: number; month: number; count: number }[];  // 12 elements
   topAnime: { title: string; count: number }[];
 }
+
+export interface DailyCount {
+  date: string;   // "yyyy-MM-dd"
+  count: number;
+}

@@ -55,6 +55,15 @@ function IconSettings() {
   );
 }
 
+function IconProfile() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7.5" cy="5" r="2.5" />
+      <path d="M2 13.5c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" />
+    </svg>
+  );
+}
+
 function IconSignOut() {
   return (
     <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -116,6 +125,12 @@ export function SpeedDial() {
       label: 'Activity',
       action: () => navigate('/activity'),
       isActive: location.pathname === '/activity',
+    },
+    {
+      icon: <IconProfile />,
+      label: 'Profile',
+      action: () => navigate('/profile'),
+      isActive: location.pathname === '/profile',
     },
     {
       icon: <IconLibrary />,

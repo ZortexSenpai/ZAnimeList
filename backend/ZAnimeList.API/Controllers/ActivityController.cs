@@ -123,4 +123,27 @@ public class ActivityController(AppDbContext db) : ControllerBase
             currentStreak, longestStreak,
             hourDist, dayDist, monthlyActivity, topAnime));
     }
+
+    [HttpGet("heatmap")]
+    public async Task<ActionResult<DailyCountDto[]>> GetHeatmap()
+    {
+        var userId = GetUserId();
+        var since = DateTime.UtcNow.Date.AddDays(-364);
+
+        // Fetch timestamps in memory then group by calendar date (EF-safe)
+        var timestamps = await db.WatchActivities
+            .Where(wa => wa.UserId == userId
+                && wa.CreatedAt >= since
+                && (wa.Status == "watched episode" || wa.Status == "rewatched episode"))
+            .Select(wa => wa.CreatedAt)
+            .ToListAsync();
+
+        var daily = timestamps
+            .GroupBy(dt => dt.Date)
+            .Select(g => new DailyCountDto(g.Key.ToString("yyyy-MM-dd"), g.Count()))
+            .OrderBy(d => d.Date)
+            .ToArray();
+
+        return Ok(daily);
+    }
 }
