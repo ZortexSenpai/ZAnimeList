@@ -174,3 +174,10 @@ export const updateSettings = (settings: Settings) =>
 export { WatchActivity };
 export const getActivity = (params: { userAnimeId?: number; page?: number; pageSize?: number } = {}) =>
   api.get<WatchActivity[]>('/activity', { params }).then(r => r.data);
+
+export const getActivityStats = () =>
+  api.get<import('../types/activity').ActivityStats>('/activity/stats').then(r => r.data);
+
+// Recommendations
+export const getRewatchRecommendations = () =>
+  api.get<import('../types/recommendation').RewatchRecommendation[]>('/recommendations/rewatch').then(r => r.data);

@@ -81,6 +81,13 @@ export function Dashboard() {
             </button>
 
             <button
+              onClick={() => navigate('/recommendations')}
+              className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 font-medium"
+            >
+              Rewatch
+            </button>
+
+            <button
               onClick={() => setShowSettingsModal(true)}
               title="Settings"
               className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all duration-150 text-base"
