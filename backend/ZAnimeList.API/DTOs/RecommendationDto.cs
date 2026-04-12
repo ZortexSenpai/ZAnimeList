@@ -27,5 +27,6 @@ public record UserBasedRecommendationDto(
     string? CoverImageUrl,
     int? TotalEpisodes,
     int RecommenderScore,
-    IEnumerable<string> Genres
+    IEnumerable<string> Genres,
+    bool IsInPlanToWatch
 );

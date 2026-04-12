@@ -95,7 +95,7 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
                 HasProfilePicture = u.ProfilePictureData != null,
                 RecommendationCount = u.UserAnimes.Count(ua =>
                     ua.Score.HasValue && ua.Score >= 7 &&
-                    !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId))
+                    !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId && mua.Status != AnimeStatus.PlanToWatch))
             })
             .OrderByDescending(u => u.RecommendationCount)
             .ToListAsync();
@@ -114,7 +114,7 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
         var recs = await db.UserAnimes
             .Where(ua => ua.UserId == targetUserId &&
                          ua.Score.HasValue && ua.Score > 0 &&
-                         !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId))
+                         !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId && mua.Status != AnimeStatus.PlanToWatch))
             .Select(ua => new
             {
                 ua.AnimeId,
@@ -126,8 +126,10 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
                 ua.Anime.TotalEpisodes,
                 Score = ua.Score!.Value,
                 Genres = ua.Anime.AnimeGenres.Select(ag => ag.Genre.Name),
+                IsInPlanToWatch = db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId && mua.Status == AnimeStatus.PlanToWatch),
             })
-            .OrderByDescending(x => x.Score)
+            .OrderByDescending(x => x.IsInPlanToWatch)
+            .ThenByDescending(x => x.Score)
             .ToListAsync();
 
         return Ok(recs.Select(r => new UserBasedRecommendationDto(
@@ -137,7 +139,8 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
             r.HasLocalImage ? $"/api/anime/{r.Id}/image" : r.CoverImageUrl,
             r.TotalEpisodes,
             r.Score,
-            r.Genres
+            r.Genres,
+            r.IsInPlanToWatch
         )));
     }
 }

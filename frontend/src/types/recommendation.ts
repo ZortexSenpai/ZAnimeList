@@ -26,4 +26,5 @@ export interface UserBasedRecommendation {
   totalEpisodes: number | null;
   recommenderScore: number;
   genres: string[];
+  isInPlanToWatch: boolean;
 }

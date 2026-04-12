@@ -135,10 +135,15 @@ function UserCard({ rec, rank }: { rec: UserBasedRecommendation; rank: number })
       </div>
 
       {/* Score badge */}
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-amber-400">
           ★ {rec.recommenderScore}
         </span>
+        {rec.isInPlanToWatch && (
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-500/80 backdrop-blur-sm text-white leading-tight">
+            PTW
+          </span>
+        )}
       </div>
 
       {/* Default bottom info */}
