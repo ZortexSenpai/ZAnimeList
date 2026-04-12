@@ -10,6 +10,8 @@ A self-hosted anime list manager. Import from MyAnimeList or AniList, or build y
 docker compose up -d
 ```
 
+The image is pulled automatically from `ghcr.io/ZortexSenpai/ZAnimeList:latest`.
+
 Then open [http://localhost:8080](http://localhost:8080).
 
 The default admin credentials are `admin` / `admin` — change them via the environment variables below or through the profile settings after first login.
@@ -27,7 +29,7 @@ Update `docker-compose.yml`:
 ```yaml
 services:
   zanime:
-    build: .
+    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
     ports:
       - "8080:8080"
     environment:
@@ -49,10 +51,11 @@ volumes:
   pg_data:
 ```
 
-### Rebuilding after updates
+### Updating to the latest version
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 ### Viewing logs
@@ -94,7 +97,7 @@ Set the following environment variables (Docker) or update `appsettings.json` di
 ```yaml
 services:
   zanime:
-    build: .
+    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
     ports:
       - "8080:8080"
     volumes:

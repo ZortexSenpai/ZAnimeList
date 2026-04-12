@@ -1,6 +1,6 @@
 services:
   zanime:
-    build: .
+    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
     ports:
       - "8080:8080"
     volumes:
