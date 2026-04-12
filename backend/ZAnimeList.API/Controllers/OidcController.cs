@@ -175,7 +175,7 @@ public class OidcController(
     }
 
     private static UserDto ToDto(User user) =>
-        new(user.Id, user.Username, user.Role, user.AnilistUsername, user.MalUsername, user.Theme, user.ProfilePictureData != null, user.CreatedAt);
+        new(user.Id, user.Username, user.Role, user.AnilistUsername, user.MalUsername, user.Theme, user.CreatedAt, user.BannerImageUrl, user.AnilistAvatarUrl);
 
     private string GenerateToken(User user)
     {

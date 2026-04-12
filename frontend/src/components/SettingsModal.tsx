@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { getSettings, updateSettings, updateProfile, uploadProfilePicture, deleteProfilePicture } from '../services/api';
+import { useState, useEffect } from 'react';
+import { getSettings, updateSettings, updateProfile } from '../services/api';
 import type { ImageSource } from '../services/api';
 import type { Theme } from '../types/auth';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,11 +73,6 @@ export function SettingsModal({ onClose }: Props) {
   const [anilistUsername, setAnilistUsername] = useState(user?.anilistUsername ?? '');
   const [malUsername, setMalUsername] = useState(user?.malUsername ?? '');
   const [theme, setTheme] = useState<Theme>(user?.theme ?? 'System');
-  const [pictureVersion, setPictureVersion] = useState(Date.now());
-  const [hasPicture, setHasPicture] = useState(user?.hasProfilePicture ?? false);
-  const [pictureUploading, setPictureUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Global settings state
   const [imageSource, setImageSource] = useState<ImageSource>('Local');
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -109,38 +104,6 @@ export function SettingsModal({ onClose }: Props) {
     }
   };
 
-  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPictureUploading(true);
-    try {
-      const updatedUser = await uploadProfilePicture(file);
-      updateUser(updatedUser);
-      setHasPicture(true);
-      setPictureVersion(Date.now());
-    } catch {
-      // silently ignore
-    } finally {
-      setPictureUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleRemovePicture = async () => {
-    setPictureUploading(true);
-    try {
-      const updatedUser = await deleteProfilePicture();
-      updateUser(updatedUser);
-      setHasPicture(false);
-    } catch {
-      // silently ignore
-    } finally {
-      setPictureUploading(false);
-    }
-  };
-
-  const initials = (user?.username ?? '?').slice(0, 2).toUpperCase();
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl shadow-black/40 border border-zinc-200 dark:border-white/10 w-full max-w-lg flex flex-col animate-scale-in max-h-[90vh]">
@@ -158,57 +121,6 @@ export function SettingsModal({ onClose }: Props) {
 
         {/* Scrollable body */}
         <div className="px-6 py-5 overflow-y-auto flex-1">
-
-          {/* Profile picture */}
-          <SectionLabel>Profile Picture</SectionLabel>
-          <div className="flex items-center gap-4 mb-1">
-            <div className="relative shrink-0">
-              {hasPicture ? (
-                <img
-                  key={pictureVersion}
-                  src={`/api/auth/profile/picture?t=${pictureVersion}`}
-                  alt="Profile"
-                  className="w-16 h-16 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-white/10"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg ring-2 ring-zinc-200 dark:ring-white/10 select-none">
-                  {initials}
-                </div>
-              )}
-              {pictureUploading && (
-                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                className="hidden"
-                onChange={handlePictureChange}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={pictureUploading}
-                className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 transition-all disabled:opacity-50 font-medium"
-              >
-                Upload photo
-              </button>
-              {hasPicture && (
-                <button
-                  onClick={handleRemovePicture}
-                  disabled={pictureUploading}
-                  className="px-3 py-1.5 text-xs rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all disabled:opacity-50 font-medium"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-
-          <Divider />
 
           {/* Account links */}
           <SectionLabel>Account Links</SectionLabel>

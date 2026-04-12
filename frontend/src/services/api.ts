@@ -48,17 +48,11 @@ export const getUsers = () =>
 export const deleteUser = (id: number) =>
   api.delete(`/auth/users/${id}`);
 
+export const getMe = () =>
+  api.get<User>('/auth/me').then(r => r.data);
+
 export const updateProfile = (data: { anilistUsername: string | null; malUsername: string | null; theme: Theme }) =>
   api.put<User>('/auth/profile', data).then(r => r.data);
-
-export const uploadProfilePicture = (file: File) => {
-  const form = new FormData();
-  form.append('file', file);
-  return api.post<User>('/auth/profile/picture', form).then(r => r.data);
-};
-
-export const deleteProfilePicture = () =>
-  api.delete<User>('/auth/profile/picture').then(r => r.data);
 
 // Anime CRUD
 export const getAnimes = (filters: AnimeFilters = {}) =>

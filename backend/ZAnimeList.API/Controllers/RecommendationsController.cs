@@ -92,7 +92,7 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
             {
                 u.Id,
                 u.Username,
-                HasProfilePicture = u.ProfilePictureData != null,
+                AvatarUrl = u.AnilistAvatarUrl,
                 RecommendationCount = u.UserAnimes.Count(ua =>
                     ua.Score.HasValue && ua.Score >= 7 &&
                     !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId && mua.Status != AnimeStatus.PlanToWatch))
@@ -100,7 +100,7 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
             .OrderByDescending(u => u.RecommendationCount)
             .ToListAsync();
 
-        return Ok(users.Select(u => new RecommendableUserDto(u.Id, u.Username, u.HasProfilePicture, u.RecommendationCount)));
+        return Ok(users.Select(u => new RecommendableUserDto(u.Id, u.Username, u.AvatarUrl, u.RecommendationCount)));
     }
 
     [HttpGet("users/{targetUserId:int}")]

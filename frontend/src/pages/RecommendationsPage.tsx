@@ -202,9 +202,9 @@ function UserPicker({
                 : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5'
             }`}
           >
-            {u.hasProfilePicture ? (
+            {u.avatarUrl ? (
               <img
-                src={`/api/auth/users/${u.userId}/picture`}
+                src={u.avatarUrl}
                 alt={u.username}
                 className="w-7 h-7 rounded-full object-cover shrink-0"
               />

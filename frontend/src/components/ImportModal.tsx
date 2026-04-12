@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { importMal, importAnilistByUsername, importAnilistFile, exportMal, type ImportResult, type ImportProgress } from '../services/api';
+import { importMal, importAnilistByUsername, importAnilistFile, exportMal, getMe, type ImportResult, type ImportProgress } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
@@ -12,7 +12,7 @@ type Provider = 'mal' | 'anilist';
 type AnilistMethod = 'username' | 'file';
 
 export function ImportModal({ onClose, onImported, onOpenSettings }: Props) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [provider, setProvider] = useState<Provider>('mal');
   const [anilistMethod, setAnilistMethod] = useState<AnilistMethod>('username');
   const [file, setFile] = useState<File | null>(null);
@@ -42,6 +42,8 @@ export function ImportModal({ onClose, onImported, onOpenSettings }: Props) {
         }
       }
       setResult(res);
+      // Refresh user in case profile picture / banner were copied from AniList
+      getMe().then(updateUser).catch(() => {});
       onImported();
     } catch (e: any) {
       setError(e.message ?? 'Import failed. Please try again.');

@@ -19,8 +19,8 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         var page = 1;
         bool hasNextPage;
 
-        // Get AniList numeric user ID early (needed for activity import after list import)
-        var anilistUserId = await GetAnilistUserIdAsync(username);
+        // Get AniList numeric user ID + profile media early
+        var (anilistUserId, avatarUrl, bannerUrl) = await GetAnilistUserProfileAsync(username);
 
         var settings = await db.Settings.FindAsync(1) ?? new AppSettings();
         var imageSource = settings.ImageSource;
@@ -218,6 +218,19 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
             await db.SaveChangesAsync();
             page++;
         } while (hasNextPage);
+
+        // Copy AniList avatar URL + banner if not already set
+        var dbUser = await db.Users.FindAsync(userId);
+        if (dbUser != null)
+        {
+            if (dbUser.AnilistAvatarUrl == null && !string.IsNullOrEmpty(avatarUrl))
+                dbUser.AnilistAvatarUrl = avatarUrl;
+
+            if (dbUser.BannerImageUrl == null && !string.IsNullOrEmpty(bannerUrl))
+                dbUser.BannerImageUrl = bannerUrl;
+
+            await db.SaveChangesAsync();
+        }
 
         // Import activity log after the list
         if (anilistUserId.HasValue)
@@ -435,12 +448,14 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         }
     }
 
-    private async Task<int?> GetAnilistUserIdAsync(string username)
+    private async Task<(int? userId, string? avatarUrl, string? bannerUrl)> GetAnilistUserProfileAsync(string username)
     {
         var query = """
             query ($username: String) {
               User(name: $username) {
                 id
+                avatar { large }
+                bannerImage
               }
             }
             """;
@@ -455,12 +470,18 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
         try
         {
             var response = await httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode) return (null, null, null);
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("data").GetProperty("User").GetProperty("id").GetInt32();
+            var user = doc.RootElement.GetProperty("data").GetProperty("User");
+            var id = user.GetProperty("id").GetInt32();
+            var avatarUrl = user.TryGetProperty("avatar", out var av) && av.TryGetProperty("large", out var lg) && lg.ValueKind != JsonValueKind.Null
+                ? lg.GetString() : null;
+            var bannerUrl = user.TryGetProperty("bannerImage", out var bi) && bi.ValueKind != JsonValueKind.Null
+                ? bi.GetString() : null;
+            return (id, avatarUrl, bannerUrl);
         }
-        catch { return null; }
+        catch { return (null, null, null); }
     }
 
     private async Task ImportActivitiesAsync(int anilistUserId, int userId, Func<ImportProgressDto, Task>? onProgress)

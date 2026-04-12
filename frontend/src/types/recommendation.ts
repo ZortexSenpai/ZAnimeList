@@ -14,7 +14,7 @@ export interface RewatchRecommendation {
 export interface RecommendableUser {
   userId: number;
   username: string;
-  hasProfilePicture: boolean;
+  avatarUrl: string | null;
   recommendationCount: number;
 }
 

@@ -8,8 +8,9 @@ export interface User {
   anilistUsername: string | null;
   malUsername: string | null;
   theme: Theme;
-  hasProfilePicture: boolean;
   createdAt: string;
+  bannerImageUrl: string | null;
+  anilistAvatarUrl: string | null;
 }
 
 export interface TokenResponse {

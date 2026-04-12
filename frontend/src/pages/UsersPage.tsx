@@ -10,14 +10,12 @@ function formatMemberSince(iso: string): string {
 
 function Avatar({ user }: { user: User }) {
   const initials = user.username.slice(0, 2).toUpperCase();
-  const [imgError, setImgError] = useState(false);
 
-  if (user.hasProfilePicture && !imgError) {
+  if (user.anilistAvatarUrl) {
     return (
       <img
-        src={`/api/auth/users/${user.id}/picture`}
+        src={user.anilistAvatarUrl}
         alt={user.username}
-        onError={() => setImgError(true)}
         className="w-9 h-9 rounded-full object-cover shrink-0"
       />
     );

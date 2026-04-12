@@ -16,7 +16,7 @@ public record RewatchRecommendationDto(
 public record RecommendableUserDto(
     int UserId,
     string Username,
-    bool HasProfilePicture,
+    string? AvatarUrl,
     int RecommendationCount
 );
 

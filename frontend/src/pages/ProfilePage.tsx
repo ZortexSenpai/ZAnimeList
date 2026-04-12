@@ -405,8 +405,6 @@ export function ProfilePage() {
   const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
   const [heatmapData, setHeatmapData] = useState<DailyCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pictureVersion] = useState(Date.now());
-
   useEffect(() => {
     Promise.all([
       getAnimes(),
@@ -450,7 +448,7 @@ export function ProfilePage() {
     .sort((a, b) => b.score! - a.score!)
     .slice(0, 6);
 
-  const hasPicture = user?.hasProfilePicture ?? false;
+  const avatarUrl = user?.anilistAvatarUrl ?? null;
   const initials = (user?.username ?? '?').slice(0, 2).toUpperCase();
 
   return (
@@ -465,20 +463,30 @@ export function ProfilePage() {
       </header>
 
       {/* Banner */}
-      <div className="relative h-40 sm:h-52 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 overflow-hidden select-none">
-        {/* Dot grid overlay */}
-        <div
-          className="absolute inset-0 opacity-100"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-          }}
-        />
-        {/* Bottom fade */}
+      <div className="relative h-40 sm:h-52 overflow-hidden select-none bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700">
+        {user?.bannerImageUrl ? (
+          <img
+            src={user.bannerImageUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <>
+            {/* Dot grid overlay */}
+            <div
+              className="absolute inset-0 opacity-100"
+              style={{
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                backgroundSize: '28px 28px',
+              }}
+            />
+            {/* Glow orbs */}
+            <div className="absolute -top-16 -right-16 w-72 h-72 bg-violet-500/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-8 left-1/3 w-56 h-56 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none" />
+          </>
+        )}
+        {/* Bottom fade — always present */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-        {/* Glow orbs */}
-        <div className="absolute -top-16 -right-16 w-72 h-72 bg-violet-500/30 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-8 left-1/3 w-56 h-56 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
@@ -488,9 +496,9 @@ export function ProfilePage() {
 
           {/* Avatar */}
           <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl ring-4 ring-white dark:ring-zinc-950 overflow-hidden bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shadow-lg">
-            {hasPicture ? (
+            {avatarUrl ? (
               <img
-                src={`/api/auth/profile/picture?t=${pictureVersion}`}
+                src={avatarUrl}
                 alt={user?.username}
                 className="w-full h-full object-cover"
               />
