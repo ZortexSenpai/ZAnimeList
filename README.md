@@ -6,6 +6,9 @@ A self-hosted anime list manager. Import from MyAnimeList or AniList, or build y
 
 **Prerequisites:** Docker and Docker Compose.
 
+1. Edit `appsettings.json` — at minimum set a strong `Jwt.Key` and update `DefaultUser` credentials.
+2. Start the container:
+
 ```bash
 docker compose up -d
 ```
@@ -24,7 +27,8 @@ Edit `docker-compose.yml` and change `"8080:8080"` to `"<your-port>:8080"`.
 
 ### Using PostgreSQL instead of SQLite
 
-Update `docker-compose.yml`:
+1. In `appsettings.json` set `"DatabaseProvider": "postgresql"` and update `ConnectionStrings.PostgreSQL` with your credentials.
+2. Add a `db` service to `docker-compose.yml`:
 
 ```yaml
 services:
@@ -32,9 +36,9 @@ services:
     image: ghcr.io/ZortexSenpai/ZAnimeList:latest
     ports:
       - "8080:8080"
-    environment:
-      - DatabaseProvider=postgresql
-      - ConnectionStrings__PostgreSQL=Host=db;Database=zanime;Username=zanime;Password=changeme
+    volumes:
+      - zanime_data:/data
+      - ./appsettings.json:/app/appsettings.json:ro
     depends_on:
       - db
 
@@ -48,6 +52,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
 volumes:
+  zanime_data:
   pg_data:
 ```
 
@@ -90,32 +95,7 @@ ZAnimeList supports login via any OpenID Connect provider. The flow uses PKCE so
 
 ### 2 — Configure ZAnimeList
 
-Set the following environment variables (Docker) or update `appsettings.json` directly.
-
-**Docker (`docker-compose.yml`):**
-
-```yaml
-services:
-  zanime:
-    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - zanime_data:/data
-    environment:
-      - ConnectionStrings__Sqlite=Data Source=/data/zanime.db
-      - Oidc__Enabled=true
-      - Oidc__Authority=https://authentik.example.com/application/o/zanime
-      - Oidc__ClientId=your-client-id
-      - Oidc__ClientSecret=your-client-secret
-      - Oidc__RedirectUri=https://anime.example.com/oidc-callback
-      - Oidc__DisplayName=Authentik
-
-volumes:
-  zanime_data:
-```
-
-**`appsettings.json` (development or custom deployments):**
+Edit the `Oidc` section in `appsettings.json`:
 
 ```json
 "Oidc": {

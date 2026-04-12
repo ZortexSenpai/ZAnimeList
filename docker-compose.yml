@@ -5,8 +5,7 @@ services:
       - "8080:8080"
     volumes:
       - zanime_data:/data
-    environment:
-      - ConnectionStrings__Sqlite=Data Source=/data/zanime.db
+      - ./appsettings.json:/app/appsettings.json:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.zanime.rule=Host(`anime.example.com`)"
