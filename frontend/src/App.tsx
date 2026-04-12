@@ -11,11 +11,16 @@ import { SpeedDial } from './components/SpeedDial';
 
 function applyTheme(theme: string) {
   const isDark =
-    theme === 'Dark' || theme === 'OLED' ||
+    theme === 'Dark' || theme === 'OLED' || theme === 'Midnight' || theme === 'Nord' || theme === 'Dracula' ||
     (theme === 'System' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', isDark);
   document.documentElement.classList.toggle('oled', theme === 'OLED');
   document.documentElement.classList.toggle('sepia', theme === 'Sepia');
+  document.documentElement.classList.toggle('midnight', theme === 'Midnight');
+  document.documentElement.classList.toggle('nord', theme === 'Nord');
+  document.documentElement.classList.toggle('dracula', theme === 'Dracula');
+  document.documentElement.classList.toggle('rose', theme === 'Rose');
+  document.documentElement.classList.toggle('mint', theme === 'Mint');
 }
 
 function ThemeApplicator() {

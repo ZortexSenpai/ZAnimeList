@@ -26,12 +26,32 @@ const IMAGE_SOURCE_OPTIONS: { value: ImageSource; label: string; description: st
   },
 ];
 
-const THEME_OPTIONS: { value: Theme; label: string; description: string }[] = [
-  { value: 'System', label: 'System', description: 'Follows your device light/dark preference.' },
-  { value: 'Light', label: 'Light', description: 'Always use the light theme.' },
-  { value: 'Dark', label: 'Dark', description: 'Always use the dark theme.' },
-  { value: 'OLED', label: 'OLED', description: 'Pure black dark theme, ideal for OLED screens.' },
-  { value: 'Sepia', label: 'Sepia', description: 'Warm cream light theme, easier on the eyes.' },
+const THEME_GROUPS: { label: string; options: { value: Theme; label: string; description: string }[] }[] = [
+  {
+    label: 'Default',
+    options: [
+      { value: 'System', label: 'System', description: 'Follows your device light/dark preference.' },
+    ],
+  },
+  {
+    label: 'Dark',
+    options: [
+      { value: 'Dark', label: 'Dark', description: 'Standard dark theme.' },
+      { value: 'OLED', label: 'OLED', description: 'Pure black, ideal for OLED screens.' },
+      { value: 'Midnight', label: 'Midnight', description: 'Deep navy blue dark theme.' },
+      { value: 'Nord', label: 'Nord', description: 'Cool arctic slate-blue dark theme.' },
+      { value: 'Dracula', label: 'Dracula', description: 'Purple-tinted dark theme.' },
+    ],
+  },
+  {
+    label: 'Light',
+    options: [
+      { value: 'Light', label: 'Light', description: 'Standard light theme.' },
+      { value: 'Sepia', label: 'Sepia', description: 'Warm cream tones, easier on the eyes.' },
+      { value: 'Rose', label: 'Rosé', description: 'Soft warm pink tinted light theme.' },
+      { value: 'Mint', label: 'Mint', description: 'Cool green tinted light theme.' },
+    ],
+  },
 ];
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -223,29 +243,36 @@ export function SettingsModal({ onClose }: Props) {
 
           {/* Theme */}
           <SectionLabel>Appearance</SectionLabel>
-          <div className="space-y-2">
-            {THEME_OPTIONS.map(opt => (
-              <label
-                key={opt.value}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
-                  theme === opt.value
-                    ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/10'
-                    : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="theme"
-                  value={opt.value}
-                  checked={theme === opt.value}
-                  onChange={() => setTheme(opt.value)}
-                  className="mt-0.5 accent-indigo-600 shrink-0"
-                />
-                <div>
-                  <div className="text-sm font-medium text-zinc-900 dark:text-white">{opt.label}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{opt.description}</div>
+          <div className="space-y-4">
+            {THEME_GROUPS.map(group => (
+              <div key={group.label}>
+                <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-2 pl-0.5">{group.label}</p>
+                <div className="space-y-2">
+                  {group.options.map(opt => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150 ${
+                        theme === opt.value
+                          ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/10'
+                          : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="theme"
+                        value={opt.value}
+                        checked={theme === opt.value}
+                        onChange={() => setTheme(opt.value)}
+                        className="mt-0.5 accent-indigo-600 shrink-0"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-zinc-900 dark:text-white">{opt.label}</div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{opt.description}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
-              </label>
+              </div>
             ))}
           </div>
 

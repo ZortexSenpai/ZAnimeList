@@ -1,5 +1,5 @@
 export type UserRole = 'Admin' | 'User';
-export type Theme = 'System' | 'Light' | 'Dark' | 'OLED' | 'Sepia';
+export type Theme = 'System' | 'Light' | 'Dark' | 'OLED' | 'Sepia' | 'Midnight' | 'Nord' | 'Dracula' | 'Rose' | 'Mint';
 
 export interface User {
   id: number;
