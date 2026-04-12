@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getRewatchRecommendations } from '../services/api';
 import type { RewatchRecommendation } from '../types/recommendation';
 import { useAuth } from '../contexts/AuthContext';
@@ -123,7 +123,7 @@ export function RecommendationsPage() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-          <span className="text-base font-semibold text-zinc-900 dark:text-white">Rewatch Picks</span>
+          <Link to="/" className="text-lg font-black bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent tracking-tight select-none">ZAnimeList</Link>
           <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
         </div>
       </header>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { getActivity, getActivityStats } from '../services/api';
 import type { WatchActivity, ActivityStats } from '../types/activity';
 import { useAuth } from '../contexts/AuthContext';
@@ -301,8 +302,8 @@ export function ActivityPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
 
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <span className="text-base font-semibold text-zinc-900 dark:text-white">Activity</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+          <Link to="/" className="text-lg font-black bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent tracking-tight select-none">ZAnimeList</Link>
           <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">{user?.username}</span>
         </div>
       </header>

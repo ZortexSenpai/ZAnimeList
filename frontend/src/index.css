@@ -41,6 +41,21 @@ body {
   animation: fade-in 0.3s ease both;
 }
 
+/* OLED dark theme — pure black backgrounds */
+html.oled {
+  --color-zinc-950: oklch(0 0 0);
+  --color-zinc-900: oklch(0.04 0.002 286);
+}
+
+/* Sepia light theme — warm cream tones */
+html.sepia {
+  --color-white: oklch(0.987 0.012 82);
+  --color-zinc-50: oklch(0.963 0.022 78);
+  --color-zinc-100: oklch(0.938 0.018 76);
+  --color-zinc-200: oklch(0.884 0.016 74);
+  --color-zinc-300: oklch(0.824 0.015 72);
+}
+
 /* SAO speed dial — trigger scan-line sweep */
 @keyframes sao-scan {
   0%   { top: -1px; opacity: 0; }

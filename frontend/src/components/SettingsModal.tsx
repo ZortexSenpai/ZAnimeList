@@ -30,6 +30,8 @@ const THEME_OPTIONS: { value: Theme; label: string; description: string }[] = [
   { value: 'System', label: 'System', description: 'Follows your device light/dark preference.' },
   { value: 'Light', label: 'Light', description: 'Always use the light theme.' },
   { value: 'Dark', label: 'Dark', description: 'Always use the dark theme.' },
+  { value: 'OLED', label: 'OLED', description: 'Pure black dark theme, ideal for OLED screens.' },
+  { value: 'Sepia', label: 'Sepia', description: 'Warm cream light theme, easier on the eyes.' },
 ];
 
 function SectionLabel({ children }: { children: React.ReactNode }) {

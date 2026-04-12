@@ -11,9 +11,11 @@ import { SpeedDial } from './components/SpeedDial';
 
 function applyTheme(theme: string) {
   const isDark =
-    theme === 'Dark' ||
+    theme === 'Dark' || theme === 'OLED' ||
     (theme === 'System' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', isDark);
+  document.documentElement.classList.toggle('oled', theme === 'OLED');
+  document.documentElement.classList.toggle('sepia', theme === 'Sepia');
 }
 
 function ThemeApplicator() {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAnimes, getActivityStats, getActivityHeatmap } from '../services/api';
 import type { Anime, AnimeStatus } from '../types/anime';
@@ -367,7 +368,9 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 animate-pulse">
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center">
+          <span className="text-lg font-black bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent tracking-tight select-none">ZAnimeList</span>
+        </div>
       </header>
       <div className="h-40 sm:h-52 bg-zinc-200 dark:bg-zinc-800" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
@@ -455,8 +458,8 @@ export function ProfilePage() {
 
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <span className="text-base font-semibold text-zinc-900 dark:text-white">Profile</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+          <Link to="/" className="text-lg font-black bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent tracking-tight select-none">ZAnimeList</Link>
           <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{user?.username}</span>
         </div>
       </header>

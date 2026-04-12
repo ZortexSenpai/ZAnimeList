@@ -89,7 +89,7 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         var user = await db.Users.FindAsync(userId);
         if (user is null) return NotFound();
 
-        var validThemes = new[] { "System", "Light", "Dark" };
+        var validThemes = new[] { "System", "Light", "Dark", "OLED", "Sepia" };
         if (!validThemes.Contains(req.Theme))
             return BadRequest(new { message = "Invalid theme value." });
 
