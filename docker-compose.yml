@@ -7,6 +7,18 @@ services:
       - zanime_data:/data
     environment:
       - ConnectionStrings__Sqlite=Data Source=/data/zanime.db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.zanime.rule=Host(`anime.example.com`)"
+      - "traefik.http.routers.zanime.entrypoints=websecure"
+      - "traefik.http.routers.zanime.tls.certresolver=letsencrypt"
+      - "traefik.http.services.zanime.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
 
 volumes:
   zanime_data:
