@@ -1,0 +1,23 @@
+services:
+  zanime:
+    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - zanime_data:/data
+      - ./appsettings.json:/app/appsettings.json:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.zanime.rule=Host(`anime.example.com`)"
+      - "traefik.http.routers.zanime.entrypoints=websecure"
+      - "traefik.http.routers.zanime.tls.certresolver=letsencrypt"
+      - "traefik.http.services.zanime.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
+
+volumes:
+  zanime_data:

@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: applies dark: utilities when .dark is on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease both;
+}
+
+/* OLED dark theme — pure black backgrounds */
+html.oled {
+  --color-zinc-950: oklch(0 0 0);
+  --color-zinc-900: oklch(0.04 0.002 286);
+}
+
+/* Midnight dark theme — deep navy blue */
+html.midnight {
+  --color-zinc-950: oklch(0.10 0.045 265);
+  --color-zinc-900: oklch(0.15 0.040 262);
+  --color-zinc-800: oklch(0.22 0.034 260);
+}
+
+/* Nord dark theme — cool arctic slate-blue */
+html.nord {
+  --color-zinc-950: oklch(0.17 0.024 243);
+  --color-zinc-900: oklch(0.22 0.021 242);
+  --color-zinc-800: oklch(0.29 0.017 240);
+}
+
+/* Dracula dark theme — deep purple-grey */
+html.dracula {
+  --color-zinc-950: oklch(0.13 0.038 300);
+  --color-zinc-900: oklch(0.18 0.034 296);
+  --color-zinc-800: oklch(0.25 0.028 293);
+}
+
+/* Sepia light theme — warm cream tones */
+html.sepia {
+  --color-white: oklch(0.987 0.012 82);
+  --color-zinc-50: oklch(0.963 0.022 78);
+  --color-zinc-100: oklch(0.938 0.018 76);
+  --color-zinc-200: oklch(0.884 0.016 74);
+  --color-zinc-300: oklch(0.824 0.015 72);
+}
+
+/* Rose light theme — soft warm pink tint */
+html.rose {
+  --color-white: oklch(0.995 0.006 12);
+  --color-zinc-50: oklch(0.975 0.012 10);
+  --color-zinc-100: oklch(0.948 0.016 8);
+  --color-zinc-200: oklch(0.900 0.014 6);
+  --color-zinc-300: oklch(0.840 0.012 5);
+}
+
+/* Mint light theme — cool green tint */
+html.mint {
+  --color-white: oklch(0.995 0.006 162);
+  --color-zinc-50: oklch(0.975 0.012 158);
+  --color-zinc-100: oklch(0.948 0.016 155);
+  --color-zinc-200: oklch(0.900 0.014 152);
+  --color-zinc-300: oklch(0.840 0.012 150);
+}
+
+/* SAO speed dial — trigger scan-line sweep */
+@keyframes sao-scan {
+  0%   { top: -1px; opacity: 0; }
+  15%  { opacity: 0.75; }
+  85%  { opacity: 0.75; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.sao-scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.55), transparent);
+  animation: sao-scan 3s ease-in-out infinite;
+  pointer-events: none;
+}
