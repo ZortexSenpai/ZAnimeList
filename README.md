@@ -13,7 +13,7 @@ A self-hosted anime list manager. Import from MyAnimeList or AniList, or build y
 docker compose up -d
 ```
 
-The image is pulled automatically from `ghcr.io/ZortexSenpai/ZAnimeList:latest`.
+The image is pulled automatically from `ghcr.io/zortexsenpai/zanimelist:latest`.
 
 Then open [http://localhost:8080](http://localhost:8080).
 
@@ -33,7 +33,7 @@ Edit `docker-compose.yml` and change `"8080:8080"` to `"<your-port>:8080"`.
 ```yaml
 services:
   zanime:
-    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
+    image: ghcr.io/zortexsenpai/zanimelist:latest
     ports:
       - "8080:8080"
     volumes:

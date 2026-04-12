@@ -1,6 +1,6 @@
 services:
   zanime:
-    image: ghcr.io/ZortexSenpai/ZAnimeList:latest
+    image: ghcr.io/zortexsenpai/zanimelist:latest
     ports:
       - "8080:8080"
     volumes:
