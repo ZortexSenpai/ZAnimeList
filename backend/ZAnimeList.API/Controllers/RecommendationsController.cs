@@ -125,6 +125,7 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
                 HasLocalImage = ua.Anime.CoverImageData != null,
                 ua.Anime.TotalEpisodes,
                 Score = ua.Score!.Value,
+                Genres = ua.Anime.AnimeGenres.Select(ag => ag.Genre.Name),
             })
             .OrderByDescending(x => x.Score)
             .ToListAsync();
@@ -135,7 +136,8 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
             r.TitleEnglish,
             r.HasLocalImage ? $"/api/anime/{r.Id}/image" : r.CoverImageUrl,
             r.TotalEpisodes,
-            r.Score
+            r.Score,
+            r.Genres
         )));
     }
 }

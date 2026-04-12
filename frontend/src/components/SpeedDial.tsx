@@ -74,6 +74,17 @@ function IconProfile() {
   );
 }
 
+function IconUsers() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5.5" cy="4.5" r="2" />
+      <path d="M1 13c0-2.76 2.02-5 4.5-5s4.5 2.24 4.5 5" />
+      <path d="M10.5 7.5c1.38 0 2.5 1.34 2.5 3" strokeOpacity="0.55" />
+      <circle cx="10.5" cy="3.5" r="1.5" strokeOpacity="0.55" />
+    </svg>
+  );
+}
+
 function IconSignOut() {
   return (
     <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -97,7 +108,7 @@ interface DialItem {
 export function SpeedDial() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [showImport, setShowImport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -126,7 +137,7 @@ export function SpeedDial() {
     },
     {
       icon: <IconRewatch />,
-      label: 'Rewatch',
+      label: 'Recommendations',
       action: () => navigate('/recommendations'),
       isActive: location.pathname === '/recommendations',
     },
@@ -142,6 +153,12 @@ export function SpeedDial() {
       action: () => navigate('/profile'),
       isActive: location.pathname === '/profile',
     },
+    ...(user?.role === 'Admin' ? [{
+      icon: <IconUsers />,
+      label: 'Users',
+      action: () => navigate('/users'),
+      isActive: location.pathname === '/users',
+    }] : []),
     ...(location.pathname === '/' ? [{
       icon: <IconAdd />,
       label: 'Add Anime',

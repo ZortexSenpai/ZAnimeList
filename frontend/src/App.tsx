@@ -7,6 +7,7 @@ import { OidcCallbackPage } from './pages/OidcCallbackPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { RecommendationsPage } from './pages/RecommendationsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { UsersPage } from './pages/UsersPage';
 import { SpeedDial } from './components/SpeedDial';
 
 function applyTheme(theme: string) {
@@ -65,6 +66,7 @@ function AppRoutes() {
       <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
       <Route path="/recommendations" element={<ProtectedRoute><RecommendationsPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
       <Route path="/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     </Routes>
   );

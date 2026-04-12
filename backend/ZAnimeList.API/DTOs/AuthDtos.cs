@@ -8,7 +8,7 @@ public record RegisterRequest(string Username, string Password, UserRole Role = 
 
 public record TokenResponse(string Token, UserDto User);
 
-public record UserDto(int Id, string Username, UserRole Role, string? AnilistUsername, string? MalUsername, string Theme, bool HasProfilePicture);
+public record UserDto(int Id, string Username, UserRole Role, string? AnilistUsername, string? MalUsername, string Theme, bool HasProfilePicture, DateTime CreatedAt);
 
 public record UpdateProfileRequest(string? AnilistUsername, string? MalUsername, string Theme);
 

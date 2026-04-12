@@ -25,4 +25,5 @@ export interface UserBasedRecommendation {
   coverImageUrl: string | null;
   totalEpisodes: number | null;
   recommenderScore: number;
+  genres: string[];
 }

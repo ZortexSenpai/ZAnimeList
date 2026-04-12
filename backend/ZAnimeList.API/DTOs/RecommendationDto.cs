@@ -26,5 +26,6 @@ public record UserBasedRecommendationDto(
     string? TitleEnglish,
     string? CoverImageUrl,
     int? TotalEpisodes,
-    int RecommenderScore
+    int RecommenderScore,
+    IEnumerable<string> Genres
 );

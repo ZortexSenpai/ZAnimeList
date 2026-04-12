@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRewatchRecommendations, getRecommendableUsers, getUserRecommendations } from '../services/api';
 import type { RewatchRecommendation, RecommendableUser, UserBasedRecommendation } from '../types/recommendation';
@@ -293,6 +293,7 @@ function FromOthersTab() {
   const [recs, setRecs] = useState<UserBasedRecommendation[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [recsError, setRecsError] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
   useEffect(() => {
     getRecommendableUsers()
@@ -307,11 +308,23 @@ function FromOthersTab() {
     if (selectedUserId === null) return;
     setRecsLoading(true);
     setRecsError(false);
+    setSelectedGenre(null);
     getUserRecommendations(selectedUserId)
       .then(setRecs)
       .catch(() => setRecsError(true))
       .finally(() => setRecsLoading(false));
   }, [selectedUserId]);
+
+  const genres = useMemo(() => {
+    const set = new Set<string>();
+    recs.forEach(r => r.genres.forEach(g => set.add(g)));
+    return Array.from(set).sort();
+  }, [recs]);
+
+  const filteredRecs = useMemo(
+    () => selectedGenre ? recs.filter(r => r.genres.includes(selectedGenre)) : recs,
+    [recs, selectedGenre]
+  );
 
   if (usersLoading) {
     return (
@@ -361,11 +374,41 @@ function FromOthersTab() {
         </div>
       ) : (
         <>
+          {/* Genre filter pills */}
+          {genres.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              <button
+                onClick={() => setSelectedGenre(null)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
+                  selectedGenre === null
+                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    : 'border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-700 dark:hover:text-zinc-200'
+                }`}
+              >
+                All
+              </button>
+              {genres.map(g => (
+                <button
+                  key={g}
+                  onClick={() => setSelectedGenre(g === selectedGenre ? null : g)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
+                    selectedGenre === g
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-700 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          )}
+
           <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium -mb-2">
-            {recs.length} {recs.length === 1 ? 'title' : 'titles'} rated by {selectedUser?.username} that you haven't watched
+            {filteredRecs.length} {filteredRecs.length === 1 ? 'title' : 'titles'}
+            {selectedGenre ? ` in ${selectedGenre}` : ''} rated by {selectedUser?.username} that you haven't watched
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {recs.map((rec, i) => (
+            {filteredRecs.map((rec, i) => (
               <UserCard key={rec.animeId} rec={rec} rank={i + 1} />
             ))}
           </div>
@@ -396,7 +439,7 @@ export function RecommendationsPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-8 bg-zinc-100 dark:bg-white/5 rounded-xl p-1 w-fit">
-          {([['rewatch', 'Rewatch'], ['from-others', 'From Others']] as [Tab, string][]).map(([value, label]) => (
+          {([['rewatch', 'Recommendations'], ['from-others', 'From Others']] as [Tab, string][]).map(([value, label]) => (
             <button
               key={value}
               onClick={() => setTab(value)}

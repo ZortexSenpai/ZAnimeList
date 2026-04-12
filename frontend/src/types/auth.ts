@@ -9,6 +9,7 @@ export interface User {
   malUsername: string | null;
   theme: Theme;
   hasProfilePicture: boolean;
+  createdAt: string;
 }
 
 export interface TokenResponse {
