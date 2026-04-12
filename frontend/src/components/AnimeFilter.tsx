@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import type { AnimeFilters, AnimeStatus, SortBy } from '../types/anime';
 import { STATUS_LABELS } from '../types/anime';
 import { MultiSelect } from './MultiSelect';
@@ -25,8 +26,34 @@ interface Props {
 }
 
 export function AnimeFilter({ filters, genres, onChange }: Props) {
+  const [localSearch, setLocalSearch] = useState(filters.search ?? '');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync when search is cleared externally (e.g. Reset button)
+  useEffect(() => {
+    setLocalSearch(filters.search ?? '');
+  }, [filters.search]);
+
+  // Cleanup on unmount
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onChange({ ...filters, search: value || undefined });
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setLocalSearch('');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    onChange({ ...filters, search: undefined });
+  };
+
   const toggleSortDir = () => onChange({ ...filters, sortDesc: !filters.sortDesc });
-  const hasActiveFilters = filters.status || filters.genres?.length || filters.search;
+  const hasActiveFilters = filters.status || filters.genres?.length || filters.search || localSearch;
 
   return (
     <div className="space-y-2.5">
@@ -46,13 +73,13 @@ export function AnimeFilter({ filters, genres, onChange }: Props) {
           <input
             type="text"
             placeholder="Search titles…"
-            value={filters.search ?? ''}
-            onChange={e => onChange({ ...filters, search: e.target.value || undefined })}
+            value={localSearch}
+            onChange={handleSearchChange}
             className="w-full h-9 pl-9 pr-8 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-500/50 transition-all duration-150"
           />
-          {filters.search && (
+          {localSearch && (
             <button
-              onClick={() => onChange({ ...filters, search: undefined })}
+              onClick={clearSearch}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

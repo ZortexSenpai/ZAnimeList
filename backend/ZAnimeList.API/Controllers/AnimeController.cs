@@ -36,7 +36,12 @@ public class AnimeController(AppDbContext db) : ControllerBase
             query = query.Where(ua => genres.All(g => ua.Anime.AnimeGenres.Any(ag => ag.Genre.Name == g)));
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(ua => ua.Anime.Title.Contains(search) || (ua.Anime.TitleEnglish != null && ua.Anime.TitleEnglish.Contains(search)));
+        {
+            var pattern = $"%{search}%";
+            query = query.Where(ua =>
+                EF.Functions.Like(ua.Anime.Title, pattern) ||
+                (ua.Anime.TitleEnglish != null && EF.Functions.Like(ua.Anime.TitleEnglish, pattern)));
+        }
 
         query = sortBy switch
         {

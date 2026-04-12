@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import { AnimeFilter } from '../components/AnimeFilter';
@@ -24,13 +24,16 @@ export function Dashboard() {
   const [editTarget, setEditTarget] = useState<Anime | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  const reqId = useRef(0);
+
   const fetchAnimes = useCallback(async () => {
+    const id = ++reqId.current;
     setLoading(true);
     try {
       const data = await getAnimes(filters);
-      setAnimes(data);
+      if (id === reqId.current) setAnimes(data);
     } finally {
-      setLoading(false);
+      if (id === reqId.current) setLoading(false);
     }
   }, [filters]);
 
