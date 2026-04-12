@@ -11,3 +11,7 @@ public record TokenResponse(string Token, UserDto User);
 public record UserDto(int Id, string Username, UserRole Role, string? AnilistUsername, string? MalUsername, string Theme, bool HasProfilePicture);
 
 public record UpdateProfileRequest(string? AnilistUsername, string? MalUsername, string Theme);
+
+public record OidcCallbackRequest(string Code, string CodeVerifier);
+public record AuthorizeUrlResponse(string Url);
+public record OidcConfigResponse(bool Enabled, string? DisplayName);

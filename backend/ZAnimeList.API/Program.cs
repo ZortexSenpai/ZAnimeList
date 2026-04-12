@@ -24,6 +24,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Services
 builder.Services.AddHttpClient<MalImportService>();
 builder.Services.AddHttpClient<AnilistImportService>();
+builder.Services.AddHttpClient(); // generic IHttpClientFactory for OidcController
+builder.Services.AddMemoryCache();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;

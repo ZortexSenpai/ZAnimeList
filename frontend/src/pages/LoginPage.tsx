@@ -1,6 +1,24 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { loginUser } from '../services/api';
+import { loginUser, getOidcConfig, getOidcAuthorizeUrl, type OidcConfig } from '../services/api';
+
+// PKCE helpers using the Web Crypto API
+async function generatePkce(): Promise<{ verifier: string; challenge: string }> {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const verifier = btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+  return { verifier, challenge };
+}
+
+function generateState(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -8,6 +26,12 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [oidcLoading, setOidcLoading] = useState(false);
+  const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null);
+
+  useEffect(() => {
+    getOidcConfig().then(setOidcConfig).catch(() => {/* silently ignore */});
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -20,6 +44,22 @@ export function LoginPage() {
       setError('Invalid username or password.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOidcLogin = async () => {
+    setError('');
+    setOidcLoading(true);
+    try {
+      const { verifier, challenge } = await generatePkce();
+      const state = generateState();
+      sessionStorage.setItem('oidc_code_verifier', verifier);
+      sessionStorage.setItem('oidc_state', state);
+      const url = await getOidcAuthorizeUrl(challenge, state);
+      window.location.href = url;
+    } catch {
+      setError('Could not reach the identity provider. Please try again.');
+      setOidcLoading(false);
     }
   };
 
@@ -84,6 +124,35 @@ export function LoginPage() {
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
+
+          {oidcConfig?.enabled && (
+            <>
+              <div className="flex items-center gap-3 my-1">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-zinc-600">or</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOidcLogin}
+                disabled={oidcLoading}
+                className="py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold disabled:opacity-50 transition-all duration-150 flex items-center justify-center gap-2"
+              >
+                {oidcLoading ? (
+                  'Redirecting…'
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                      <path d="M12 8v4l3 3" strokeLinecap="round" />
+                    </svg>
+                    Sign in with {oidcConfig.displayName ?? 'SSO'}
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>

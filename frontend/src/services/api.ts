@@ -27,6 +27,18 @@ api.interceptors.request.use(config => {
 export const loginUser = (data: { username: string; password: string }) =>
   api.post<TokenResponse>('/auth/login', data).then(r => r.data);
 
+export interface OidcConfig { enabled: boolean; displayName: string | null; }
+export const getOidcConfig = () =>
+  api.get<OidcConfig>('/auth/oidc/config').then(r => r.data);
+
+export const getOidcAuthorizeUrl = (codeChallenge: string, state: string) =>
+  api.get<{ url: string }>('/auth/oidc/authorize-url', {
+    params: { code_challenge: codeChallenge, state },
+  }).then(r => r.data.url);
+
+export const oidcCallback = (code: string, codeVerifier: string) =>
+  api.post<TokenResponse>('/auth/oidc/callback', { code, codeVerifier }).then(r => r.data);
+
 export const registerUser = (data: { username: string; password: string; role?: UserRole }) =>
   api.post<User>('/auth/register', data).then(r => r.data);
 

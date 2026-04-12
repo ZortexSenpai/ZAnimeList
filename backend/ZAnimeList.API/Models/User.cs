@@ -15,5 +15,9 @@ public class User
     public string? ProfilePictureMimeType { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // OIDC / external auth fields
+    public string? ExternalId { get; set; }   // Subject claim from OIDC provider
+    public string? AuthProvider { get; set; } // "oidc" or null for local accounts
+
     public List<UserAnime> UserAnimes { get; set; } = [];
 }
