@@ -26,6 +26,7 @@ builder.Services.AddHttpClient<MalImportService>();
 builder.Services.AddHttpClient<AnilistImportService>();
 builder.Services.AddHttpClient(); // generic IHttpClientFactory for OidcController
 builder.Services.AddMemoryCache();
+builder.Services.AddHostedService<AnilistAutoSyncService>();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;

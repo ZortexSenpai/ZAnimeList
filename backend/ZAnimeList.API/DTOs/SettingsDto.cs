@@ -1,3 +1,3 @@
 namespace ZAnimeList.API.DTOs;
 
-public record SettingsDto(string ImageSource);
+public record SettingsDto(string ImageSource, string? AutoSyncInterval);

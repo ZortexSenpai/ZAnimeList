@@ -106,21 +106,29 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var startedAt = ParseAnilistDate(item.GetProperty("startedAt"));
                     var completedAt = ParseAnilistDate(item.GetProperty("completedAt"));
 
+                    var status = statusStr switch
+                    {
+                        "CURRENT"   => AnimeStatus.Watching,
+                        "COMPLETED" => AnimeStatus.Completed,
+                        "PAUSED"    => AnimeStatus.OnHold,
+                        "DROPPED"   => AnimeStatus.Dropped,
+                        "PLANNING"  => AnimeStatus.PlanToWatch,
+                        _           => AnimeStatus.PlanToWatch
+                    };
+
                     if (existingAnilistIds.Contains(anilistId))
                     {
-                        // Update dates on existing entry if not yet set
-                        if (startedAt.HasValue || completedAt.HasValue)
+                        // Update status, score, progress and dates on existing entry
+                        var existing = await db.UserAnimes
+                            .Where(ua => ua.UserId == userId && ua.Anime.AnilistId == anilistId)
+                            .FirstOrDefaultAsync();
+                        if (existing != null)
                         {
-                            var existing = await db.UserAnimes
-                                .Where(ua => ua.UserId == userId && ua.Anime.AnilistId == anilistId)
-                                .FirstOrDefaultAsync();
-                            if (existing != null && (existing.StartedAt == null || existing.FinishedAt == null))
-                            {
-                                if (startedAt.HasValue && existing.StartedAt == null)
-                                    existing.StartedAt = startedAt;
-                                if (completedAt.HasValue && existing.FinishedAt == null)
-                                    existing.FinishedAt = completedAt;
-                            }
+                            existing.Status = status;
+                            existing.Score = score > 0 ? (int)score : null;
+                            existing.EpisodesWatched = progress;
+                            if (startedAt.HasValue) existing.StartedAt = startedAt;
+                            if (completedAt.HasValue) existing.FinishedAt = completedAt;
                         }
                         skipped++;
                         continue;
@@ -141,16 +149,6 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var description = media.GetProperty("description").ValueKind == JsonValueKind.Null
                         ? null
                         : media.GetProperty("description").GetString();
-
-                    var status = statusStr switch
-                    {
-                        "CURRENT"   => AnimeStatus.Watching,
-                        "COMPLETED" => AnimeStatus.Completed,
-                        "PAUSED"    => AnimeStatus.OnHold,
-                        "DROPPED"   => AnimeStatus.Dropped,
-                        "PLANNING"  => AnimeStatus.PlanToWatch,
-                        _           => AnimeStatus.PlanToWatch
-                    };
 
                     var genreNames = media.GetProperty("genres")
                         .EnumerateArray()
@@ -281,17 +279,38 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     if (onProgress != null)
                         await onProgress(new ImportProgressDto(++processed, totalEntries, titleRomaji));
 
-                    if (existingAnilistIds.Contains(anilistId))
-                    {
-                        skipped++;
-                        continue;
-                    }
-
                     var statusStr = entry.GetProperty("status").GetString() ?? string.Empty;
                     var score = entry.GetProperty("score").GetDouble();
                     var progress = entry.GetProperty("progress").GetInt32();
                     var startedAt = entry.TryGetProperty("startedAt", out var sAt) ? ParseAnilistDate(sAt) : null;
                     var completedAt = entry.TryGetProperty("completedAt", out var cAt) ? ParseAnilistDate(cAt) : null;
+
+                    var status = statusStr switch
+                    {
+                        "CURRENT"   => AnimeStatus.Watching,
+                        "COMPLETED" => AnimeStatus.Completed,
+                        "PAUSED"    => AnimeStatus.OnHold,
+                        "DROPPED"   => AnimeStatus.Dropped,
+                        "PLANNING"  => AnimeStatus.PlanToWatch,
+                        _           => AnimeStatus.PlanToWatch
+                    };
+
+                    if (existingAnilistIds.Contains(anilistId))
+                    {
+                        var existing = await db.UserAnimes
+                            .Where(ua => ua.UserId == userId && ua.Anime.AnilistId == anilistId)
+                            .FirstOrDefaultAsync();
+                        if (existing != null)
+                        {
+                            existing.Status = status;
+                            existing.Score = score > 0 ? (int)score : null;
+                            existing.EpisodesWatched = progress;
+                            if (startedAt.HasValue) existing.StartedAt = startedAt;
+                            if (completedAt.HasValue) existing.FinishedAt = completedAt;
+                        }
+                        skipped++;
+                        continue;
+                    }
                     var totalEpisodes = media.TryGetProperty("episodes", out var ep) && ep.ValueKind != JsonValueKind.Null
                         ? ep.GetInt32()
                         : (int?)null;
@@ -305,16 +324,6 @@ public class AnilistImportService(AppDbContext db, HttpClient httpClient)
                     var idMal = media.TryGetProperty("idMal", out var idMalEl) && idMalEl.ValueKind != JsonValueKind.Null
                         ? idMalEl.GetInt32()
                         : (int?)null;
-
-                    var status = statusStr switch
-                    {
-                        "CURRENT"   => AnimeStatus.Watching,
-                        "COMPLETED" => AnimeStatus.Completed,
-                        "PAUSED"    => AnimeStatus.OnHold,
-                        "DROPPED"   => AnimeStatus.Dropped,
-                        "PLANNING"  => AnimeStatus.PlanToWatch,
-                        _           => AnimeStatus.PlanToWatch
-                    };
 
                     var genreNames = media.TryGetProperty("genres", out var genresProp)
                         ? genresProp.EnumerateArray()

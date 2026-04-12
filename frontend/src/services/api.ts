@@ -177,16 +177,18 @@ export const searchAnilist = (q: string) =>
 
 // Settings
 export type ImageSource = 'Local' | 'Anilist' | 'MyAnimeList';
+export type AutoSyncInterval = '15min' | '30min' | '1h' | '6h' | '1d' | '1week';
 
 export interface Settings {
   imageSource: ImageSource;
+  autoSyncInterval: AutoSyncInterval | null;
 }
 
 export const getSettings = () =>
   api.get<Settings>('/settings').then(r => r.data);
 
 export const updateSettings = (settings: Settings) =>
-  api.put<Settings>('/settings', { imageSource: settings.imageSource }).then(r => r.data);
+  api.put<Settings>('/settings', { imageSource: settings.imageSource, autoSyncInterval: settings.autoSyncInterval }).then(r => r.data);
 
 // Activity
 export type { WatchActivity };
