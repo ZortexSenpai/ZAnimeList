@@ -101,6 +101,17 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         return Ok(ToDto(user));
     }
 
+    [HttpGet("users/{id:int}/picture")]
+    [Authorize]
+    public async Task<IActionResult> GetUserPicture(int id)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null || user.ProfilePictureData is null)
+            return NotFound();
+
+        return File(user.ProfilePictureData, user.ProfilePictureMimeType ?? "image/jpeg");
+    }
+
     [HttpGet("profile/picture")]
     [Authorize]
     public async Task<IActionResult> GetProfilePicture()

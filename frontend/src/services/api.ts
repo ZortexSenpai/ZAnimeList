@@ -208,3 +208,9 @@ export const getActivityHeatmap = () =>
 // Recommendations
 export const getRewatchRecommendations = () =>
   api.get<import('../types/recommendation').RewatchRecommendation[]>('/recommendations/rewatch').then(r => r.data);
+
+export const getRecommendableUsers = () =>
+  api.get<import('../types/recommendation').RecommendableUser[]>('/recommendations/users').then(r => r.data);
+
+export const getUserRecommendations = (userId: number) =>
+  api.get<import('../types/recommendation').UserBasedRecommendation[]>(`/recommendations/users/${userId}`).then(r => r.data);

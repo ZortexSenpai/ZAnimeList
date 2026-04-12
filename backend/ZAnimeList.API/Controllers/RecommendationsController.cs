@@ -80,4 +80,62 @@ public class RecommendationsController(AppDbContext db) : ControllerBase
 
         return Ok(results.OrderByDescending(r => r.RecommendationScore));
     }
+
+    [HttpGet("users")]
+    public async Task<ActionResult<IEnumerable<RecommendableUserDto>>> GetRecommendableUsers()
+    {
+        var userId = GetUserId();
+
+        var users = await db.Users
+            .Where(u => u.Id != userId)
+            .Select(u => new
+            {
+                u.Id,
+                u.Username,
+                HasProfilePicture = u.ProfilePictureData != null,
+                RecommendationCount = u.UserAnimes.Count(ua =>
+                    ua.Score.HasValue && ua.Score >= 7 &&
+                    !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId))
+            })
+            .OrderByDescending(u => u.RecommendationCount)
+            .ToListAsync();
+
+        return Ok(users.Select(u => new RecommendableUserDto(u.Id, u.Username, u.HasProfilePicture, u.RecommendationCount)));
+    }
+
+    [HttpGet("users/{targetUserId:int}")]
+    public async Task<ActionResult<IEnumerable<UserBasedRecommendationDto>>> GetUserRecommendations(int targetUserId)
+    {
+        var userId = GetUserId();
+
+        if (targetUserId == userId)
+            return BadRequest(new { message = "Cannot get recommendations from yourself." });
+
+        var recs = await db.UserAnimes
+            .Where(ua => ua.UserId == targetUserId &&
+                         ua.Score.HasValue && ua.Score > 0 &&
+                         !db.UserAnimes.Any(mua => mua.UserId == userId && mua.AnimeId == ua.AnimeId))
+            .Select(ua => new
+            {
+                ua.AnimeId,
+                ua.Id,
+                ua.Anime.Title,
+                ua.Anime.TitleEnglish,
+                ua.Anime.CoverImageUrl,
+                HasLocalImage = ua.Anime.CoverImageData != null,
+                ua.Anime.TotalEpisodes,
+                Score = ua.Score!.Value,
+            })
+            .OrderByDescending(x => x.Score)
+            .ToListAsync();
+
+        return Ok(recs.Select(r => new UserBasedRecommendationDto(
+            r.AnimeId,
+            r.Title,
+            r.TitleEnglish,
+            r.HasLocalImage ? $"/api/anime/{r.Id}/image" : r.CoverImageUrl,
+            r.TotalEpisodes,
+            r.Score
+        )));
+    }
 }

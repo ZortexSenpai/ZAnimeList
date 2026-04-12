@@ -10,3 +10,19 @@ export interface RewatchRecommendation {
   daysSinceLastWatch: number;
   recommendationScore: number;
 }
+
+export interface RecommendableUser {
+  userId: number;
+  username: string;
+  hasProfilePicture: boolean;
+  recommendationCount: number;
+}
+
+export interface UserBasedRecommendation {
+  animeId: number;
+  title: string;
+  titleEnglish: string | null;
+  coverImageUrl: string | null;
+  totalEpisodes: number | null;
+  recommenderScore: number;
+}

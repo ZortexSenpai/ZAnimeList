@@ -12,3 +12,19 @@ public record RewatchRecommendationDto(
     int DaysSinceLastWatch,
     double RecommendationScore
 );
+
+public record RecommendableUserDto(
+    int UserId,
+    string Username,
+    bool HasProfilePicture,
+    int RecommendationCount
+);
+
+public record UserBasedRecommendationDto(
+    int AnimeId,
+    string Title,
+    string? TitleEnglish,
+    string? CoverImageUrl,
+    int? TotalEpisodes,
+    int RecommenderScore
+);
