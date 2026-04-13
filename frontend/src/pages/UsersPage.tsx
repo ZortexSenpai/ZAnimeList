@@ -263,8 +263,9 @@ export function UsersPage() {
             {filtered.map(u => (
               <div
                 key={u.id}
-                className="group flex items-center gap-3 px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-all duration-150"
+                className="group relative flex items-center gap-3 px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-all duration-150"
               >
+                <Link to={`/users/${u.id}`} className="absolute inset-0 rounded-xl" aria-label={`View ${u.username}'s profile`} />
                 <Avatar user={u} />
 
                 <div className="flex-1 min-w-0">
@@ -303,7 +304,9 @@ export function UsersPage() {
                 </span>
 
                 {me?.role === 'Admin' && u.id !== me.id && (
-                  <DeleteButton userId={u.id} onDeleted={() => handleDeleted(u.id)} />
+                  <div className="relative z-10">
+                    <DeleteButton userId={u.id} onDeleted={() => handleDeleted(u.id)} />
+                  </div>
                 )}
               </div>
             ))}

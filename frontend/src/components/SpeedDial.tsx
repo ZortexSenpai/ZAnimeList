@@ -153,12 +153,12 @@ export function SpeedDial() {
       action: () => navigate('/profile'),
       isActive: location.pathname === '/profile',
     },
-    ...(user?.role === 'Admin' ? [{
+    {
       icon: <IconUsers />,
       label: 'Users',
       action: () => navigate('/users'),
-      isActive: location.pathname === '/users',
-    }] : []),
+      isActive: location.pathname.startsWith('/users'),
+    },
     ...(location.pathname === '/' ? [{
       icon: <IconAdd />,
       label: 'Add Anime',

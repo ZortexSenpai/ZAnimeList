@@ -58,8 +58,17 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
         return Ok(ToDto(user));
     }
 
+    [HttpGet("users/{id:int}")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> GetUser(int id)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        return Ok(ToDto(user));
+    }
+
     [HttpGet("users")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
         var users = await db.Users.ToListAsync();

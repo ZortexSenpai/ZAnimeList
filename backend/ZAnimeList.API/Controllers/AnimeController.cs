@@ -75,6 +75,35 @@ public class AnimeController(AppDbContext db) : ControllerBase
         )));
     }
 
+    [HttpGet("user/{userId:int}")]
+    public async Task<ActionResult<IEnumerable<AnimeDto>>> GetByUser(int userId)
+    {
+        var entries = await db.UserAnimes
+            .Where(ua => ua.UserId == userId)
+            .Select(ua => new
+            {
+                ua.Id,
+                ua.Anime.Title, ua.Anime.TitleEnglish, ua.Anime.Synopsis,
+                ua.Anime.CoverImageUrl,
+                ua.Anime.TotalEpisodes,
+                ua.EpisodesWatched, ua.Status, ua.Score,
+                ua.StartedAt, ua.FinishedAt,
+                ua.Anime.AiredFrom, ua.Anime.MalId, ua.Anime.AnilistId,
+                ua.CreatedAt, ua.UpdatedAt,
+                HasImage = ua.Anime.CoverImageData != null,
+                Genres = ua.Anime.AnimeGenres.Select(ag => ag.Genre.Name).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(entries.Select(ua => new AnimeDto(
+            ua.Id, ua.Title, ua.TitleEnglish, ua.Synopsis,
+            ua.HasImage ? $"/api/anime/{ua.Id}/image" : ua.CoverImageUrl,
+            ua.TotalEpisodes, ua.EpisodesWatched, ua.Status, ua.Score,
+            ua.StartedAt, ua.FinishedAt, ua.AiredFrom, ua.MalId, ua.AnilistId,
+            ua.CreatedAt, ua.UpdatedAt, ua.Genres
+        )));
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AnimeDto>> GetById(int id)
     {

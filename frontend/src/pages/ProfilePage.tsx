@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getAnimes, getActivityStats, getActivityHeatmap } from '../services/api';
+import { getAnimes, getActivityStats, getActivityHeatmap, getUserById, getUserAnimes, getUserActivityStats, getUserActivityHeatmap } from '../services/api';
+import type { User } from '../types/auth';
 import type { Anime, AnimeStatus } from '../types/anime';
 import type { ActivityStats, DailyCount } from '../types/activity';
 
@@ -400,22 +401,42 @@ function LoadingSkeleton() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { user: me } = useAuth();
+  const { id } = useParams<{ id?: string }>();
+  const targetId = id ? parseInt(id, 10) : null;
+  const isOwnProfile = targetId === null || targetId === me?.id;
+
+  const [profileUser, setProfileUser] = useState<User | null>(null);
   const [animes, setAnimes] = useState<Anime[]>([]);
   const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
   const [heatmapData, setHeatmapData] = useState<DailyCount[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    Promise.all([
-      getAnimes(),
-      getActivityStats().catch(() => null),
-      getActivityHeatmap().catch(() => []),
-    ]).then(([a, s, h]) => {
-      setAnimes(a);
-      setActivityStats(s);
-      setHeatmapData(h);
-    }).finally(() => setLoading(false));
-  }, []);
+    if (isOwnProfile) {
+      Promise.all([
+        getAnimes(),
+        getActivityStats().catch(() => null),
+        getActivityHeatmap().catch(() => []),
+      ]).then(([a, s, h]) => {
+        setAnimes(a);
+        setActivityStats(s);
+        setHeatmapData(h);
+      }).finally(() => setLoading(false));
+    } else {
+      Promise.all([
+        getUserById(targetId!),
+        getUserAnimes(targetId!),
+        getUserActivityStats(targetId!).catch(() => null),
+        getUserActivityHeatmap(targetId!).catch(() => []),
+      ]).then(([u, a, s, h]) => {
+        setProfileUser(u);
+        setAnimes(a);
+        setActivityStats(s);
+        setHeatmapData(h);
+      }).finally(() => setLoading(false));
+    }
+  }, [targetId, isOwnProfile]);
 
   if (loading) return <LoadingSkeleton />;
 
@@ -448,6 +469,7 @@ export function ProfilePage() {
     .sort((a, b) => b.score! - a.score!)
     .slice(0, 6);
 
+  const user = isOwnProfile ? me : profileUser;
   const avatarUrl = user?.anilistAvatarUrl ?? null;
   const initials = (user?.username ?? '?').slice(0, 2).toUpperCase();
 
@@ -458,7 +480,7 @@ export function ProfilePage() {
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/80 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
           <Link to="/" className="text-lg font-black bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent tracking-tight select-none">ZAnimeList</Link>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{user?.username}</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{me?.username}</span>
         </div>
       </header>
 

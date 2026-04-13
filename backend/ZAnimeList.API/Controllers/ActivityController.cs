@@ -44,9 +44,13 @@ public class ActivityController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<ActionResult<ActivityStatsDto>> GetStats()
+    public Task<ActionResult<ActivityStatsDto>> GetStats() => GetStatsForUserImpl(GetUserId());
+
+    [HttpGet("stats/{userId:int}")]
+    public Task<ActionResult<ActivityStatsDto>> GetStatsForUser(int userId) => GetStatsForUserImpl(userId);
+
+    private async Task<ActionResult<ActivityStatsDto>> GetStatsForUserImpl(int userId)
     {
-        var userId = GetUserId();
 
         var activities = await db.WatchActivities
             .Where(wa => wa.UserId == userId)
@@ -125,12 +129,16 @@ public class ActivityController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("heatmap")]
-    public async Task<ActionResult<DailyCountDto[]>> GetHeatmap()
+    public Task<ActionResult<DailyCountDto[]>> GetHeatmap() => GetHeatmapForUser(GetUserId());
+
+    [HttpGet("heatmap/{userId:int}")]
+    public Task<ActionResult<DailyCountDto[]>> GetHeatmapForUser(int userId)
+        => GetHeatmapForUserImpl(userId);
+
+    private async Task<ActionResult<DailyCountDto[]>> GetHeatmapForUserImpl(int userId)
     {
-        var userId = GetUserId();
         var since = DateTime.UtcNow.Date.AddDays(-364);
 
-        // Fetch timestamps in memory then group by calendar date (EF-safe)
         var timestamps = await db.WatchActivities
             .Where(wa => wa.UserId == userId
                 && wa.CreatedAt >= since

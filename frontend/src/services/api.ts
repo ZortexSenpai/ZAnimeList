@@ -45,6 +45,9 @@ export const registerUser = (data: { username: string; password: string; role?: 
 export const getUsers = () =>
   api.get<User[]>('/auth/users').then(r => r.data);
 
+export const getUserById = (id: number) =>
+  api.get<User>(`/auth/users/${id}`).then(r => r.data);
+
 export const deleteUser = (id: number) =>
   api.delete(`/auth/users/${id}`);
 
@@ -200,6 +203,15 @@ export const getActivityStats = () =>
 
 export const getActivityHeatmap = () =>
   api.get<import('../types/activity').DailyCount[]>('/activity/heatmap').then(r => r.data);
+
+export const getUserAnimes = (userId: number) =>
+  api.get<Anime[]>(`/anime/user/${userId}`).then(r => r.data);
+
+export const getUserActivityStats = (userId: number) =>
+  api.get<import('../types/activity').ActivityStats>(`/activity/stats/${userId}`).then(r => r.data);
+
+export const getUserActivityHeatmap = (userId: number) =>
+  api.get<import('../types/activity').DailyCount[]>(`/activity/heatmap/${userId}`).then(r => r.data);
 
 // Recommendations
 export const getRewatchRecommendations = () =>
