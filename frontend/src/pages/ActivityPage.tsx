@@ -85,7 +85,7 @@ function BarChart({
   const max = Math.max(...values, 1);
   return (
     <div>
-      <div className={`flex items-end ${gap} ${height}`}>
+      <div className={`flex ${gap} ${height}`}>
         {values.map((v, i) => (
           <div key={i} className={`flex-1 flex flex-col items-center ${labels ? 'gap-1.5' : ''}`}>
             <div className="flex-1 w-full flex items-end">
