@@ -108,7 +108,7 @@ interface DialItem {
 export function SpeedDial() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [showImport, setShowImport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
