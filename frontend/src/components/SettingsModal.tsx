@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
   onClose: () => void;
+  onBack?: () => void;
+  onSaved?: () => void;
 }
 
 const IMAGE_SOURCE_OPTIONS: { value: ImageSource; label: string; description: string }[] = [
@@ -76,7 +78,7 @@ function Divider() {
   return <div className="border-t border-zinc-100 dark:border-white/5 my-5" />;
 }
 
-export function SettingsModal({ onClose }: Props) {
+export function SettingsModal({ onClose, onBack, onSaved }: Props) {
   const { user, updateUser } = useAuth();
 
   // Profile state
@@ -113,6 +115,7 @@ export function SettingsModal({ onClose }: Props) {
       updateUser(updatedUser);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      onSaved?.();
     } finally {
       setSaving(false);
     }
@@ -124,7 +127,20 @@ export function SettingsModal({ onClose }: Props) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/5 shrink-0">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Settings</h2>
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1.5 text-xs font-medium text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="7 2 3 6 7 10" />
+                </svg>
+                Back to Import
+              </button>
+            )}
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Settings</h2>
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all text-xl"

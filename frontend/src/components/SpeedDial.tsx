@@ -111,7 +111,31 @@ export function SpeedDial() {
   const { logout } = useAuth();
   const [showImport, setShowImport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsReturnToImport, setSettingsReturnToImport] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  const openSettingsFromImport = () => {
+    setShowImport(false);
+    setSettingsReturnToImport(true);
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+    setSettingsReturnToImport(false);
+  };
+
+  const handleSettingsSaved = () => {
+    if (settingsReturnToImport) {
+      setShowSettings(false);
+      setSettingsReturnToImport(false);
+      setShowImport(true);
+    }
+  };
+
+  const handleSettingsBack = settingsReturnToImport
+    ? () => { setShowSettings(false); setSettingsReturnToImport(false); setShowImport(true); }
+    : undefined;
 
   const handleImported = () => {
     window.dispatchEvent(new CustomEvent('zanime:refresh'));
@@ -279,11 +303,15 @@ export function SpeedDial() {
         <ImportModal
           onClose={() => setShowImport(false)}
           onImported={handleImported}
-          onOpenSettings={() => { setShowImport(false); setShowSettings(true); }}
+          onOpenSettings={openSettingsFromImport}
         />
       )}
       {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
+        <SettingsModal
+          onClose={closeSettings}
+          onBack={handleSettingsBack}
+          onSaved={handleSettingsSaved}
+        />
       )}
     </>
   );
